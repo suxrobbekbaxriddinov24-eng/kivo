@@ -1,0 +1,42 @@
+import { cn } from '@/lib/utils'
+
+interface Props {
+  title: string
+  value: string | number
+  sub?: string
+  icon?: React.ReactNode
+  color?: 'indigo' | 'green' | 'yellow' | 'red' | 'blue'
+  trend?: { value: number; label: string }
+}
+
+const colors = {
+  indigo: 'bg-indigo-500/10 text-indigo-400',
+  green: 'bg-green-500/10 text-green-400',
+  yellow: 'bg-yellow-500/10 text-yellow-400',
+  red: 'bg-red-500/10 text-red-400',
+  blue: 'bg-blue-500/10 text-blue-400',
+}
+
+export default function StatCard({ title, value, sub, icon, color = 'indigo', trend }: Props) {
+  return (
+    <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 flex flex-col gap-3">
+      <div className="flex items-start justify-between">
+        <p className="text-sm text-gray-400">{title}</p>
+        {icon && (
+          <div className={cn('w-9 h-9 rounded-lg flex items-center justify-center', colors[color])}>
+            {icon}
+          </div>
+        )}
+      </div>
+      <div>
+        <p className="text-2xl font-bold text-white">{value}</p>
+        {sub && <p className="text-xs text-gray-500 mt-0.5">{sub}</p>}
+      </div>
+      {trend && (
+        <div className={cn('text-xs font-medium', trend.value >= 0 ? 'text-green-400' : 'text-red-400')}>
+          {trend.value >= 0 ? '+' : ''}{trend.value}% {trend.label}
+        </div>
+      )}
+    </div>
+  )
+}
