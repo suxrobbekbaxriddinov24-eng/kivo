@@ -6,7 +6,7 @@ import { adminService } from '@/services/admin.service'
 import { supabase } from '@/lib/supabase'
 import { toast } from '@/stores/uiStore'
 import { formatDate } from '@/lib/utils'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import type { Club } from '@/types/database'
@@ -14,6 +14,7 @@ import Button from '@/components/ui/Button'
 import Modal from '@/components/ui/Modal'
 import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
+import PhoneInput from '@/components/ui/PhoneInput'
 import StatusBadge from '@/components/ui/StatusBadge'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import { Plus, Pencil, Trash2, Eye, Search } from 'lucide-react'
@@ -47,7 +48,7 @@ export default function ClubsPage() {
   const { data: clubs = [], isLoading } = useQuery({ queryKey: ['clubs'], queryFn: clubsService.list })
   const { data: regions = [] } = useQuery({ queryKey: ['regions'], queryFn: adminService.listRegions })
 
-  const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, reset, setValue, control, watch, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { status: 'active' },
   })
@@ -255,10 +256,17 @@ export default function ClubsPage() {
               disabled={isEdit}
               {...register('login_id')}
             />
-            <Input
-              label="Telefon raqami"
-              placeholder="99-123-45-67"
-              {...register('phone')}
+            <Controller
+              name="phone"
+              control={control}
+              render={({ field }) => (
+                <PhoneInput
+                  label="Telefon raqami"
+                  value={field.value ?? ''}
+                  onChange={field.onChange}
+                  error={errors.phone?.message}
+                />
+              )}
             />
           </div>
           {!isEdit && (
