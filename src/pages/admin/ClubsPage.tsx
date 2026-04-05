@@ -149,7 +149,7 @@ export default function ClubsPage() {
           <h2 className="text-xl font-bold text-white">Klublar boshqaruvi</h2>
           <p className="text-sm text-gray-500 mt-0.5">Barcha sport klublarini boshqaring</p>
         </div>
-        <Button icon={<Plus size={15} />} onClick={openAdd}>+ Yangi klub</Button>
+        <Button icon={<Plus size={15} />} onClick={openAdd}>Yangi klub</Button>
       </div>
 
       {/* Filters */}

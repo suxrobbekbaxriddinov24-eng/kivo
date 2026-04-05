@@ -8,6 +8,7 @@ import Button from '@/components/ui/Button'
 import Modal from '@/components/ui/Modal'
 import Input from '@/components/ui/Input'
 import { useState } from 'react'
+import Select from '@/components/ui/Select'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -16,10 +17,10 @@ import { toast } from '@/stores/uiStore'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 
 const schema = z.object({
-  name: z.string().min(1, 'Filial nomi kiritilishi shart'),
-  address: z.string().optional(),
-  phone: z.string().optional(),
-  manager: z.string().optional(),
+  name:       z.string().min(1, 'Filial nomi kiritilishi shart'),
+  address:    z.string().optional(),
+  status:     z.enum(['active', 'inactive', 'suspended']),
+  created_at: z.string().optional(),
 })
 type FormData = z.infer<typeof schema>
 
@@ -44,11 +45,12 @@ export default function ClubDetailPage() {
 
   const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
+    defaultValues: { status: 'active', created_at: new Date().toISOString().split('T')[0] },
   })
 
   const saveMutation = useMutation({
     mutationFn: (data: FormData) => {
-      const payload = { club_id: clubId!, name: data.name, address: data.address || null, phone: data.phone || null, manager: data.manager || null, status: 'active' as const }
+      const payload = { club_id: clubId!, name: data.name, address: data.address || null, phone: null, manager: null, status: data.status }
       return editBranch ? clubsService.updateBranch(editBranch.id, payload) : clubsService.createBranch(payload)
     },
     onSuccess: () => {
@@ -119,7 +121,7 @@ export default function ClubDetailPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <StatusBadge status={b.status} size="sm" />
-                  <Button size="sm" variant="outline" onClick={() => { setEditBranch(b); setValue('name', b.name); setValue('address', b.address ?? ''); setValue('phone', b.phone ?? ''); setValue('manager', b.manager ?? ''); setOpen(true) }}>
+                  <Button size="sm" variant="outline" onClick={() => { setEditBranch(b); setValue('name', b.name); setValue('address', b.address ?? ''); setValue('status', b.status); setOpen(true) }}>
                     Tahrirlash
                   </Button>
                   <Button size="sm" variant="danger" onClick={() => setDeleteId(b.id)}>O'chirish</Button>
@@ -140,10 +142,36 @@ export default function ClubDetailPage() {
         }
       >
         <div className="space-y-3">
-          <Input label="Nomi *" error={errors.name?.message} {...register('name')} />
-          <Input label="Manzil" {...register('address')} />
-          <Input label="Telefon" {...register('phone')} />
-          <Input label="Boshqaruvchi" {...register('manager')} />
+          <Input
+            label="Filial nomi *"
+            placeholder="masalan: Markaziy filial"
+            error={errors.name?.message}
+            {...register('name')}
+          />
+          <Input
+            label="Manzil"
+            placeholder="Toshkent sh., Chilonzor..."
+            {...register('address')}
+          />
+          <div className="grid grid-cols-2 gap-3">
+            <Select
+              label="Holat"
+              options={[
+                { value: 'active',    label: 'Faol' },
+                { value: 'inactive',  label: 'Nofaol' },
+                { value: 'suspended', label: 'Bloklangan' },
+              ]}
+              {...register('status')}
+            />
+            <div className="flex flex-col gap-1">
+              <label className="text-sm text-gray-300 font-medium">Ro'yxatdan o'tgan sana</label>
+              <input
+                type="date"
+                {...register('created_at')}
+                className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#00ff88] focus:ring-1 focus:ring-[#00ff88]/40 transition"
+              />
+            </div>
+          </div>
         </div>
       </Modal>
 
