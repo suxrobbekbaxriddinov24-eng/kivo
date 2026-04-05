@@ -108,10 +108,13 @@ export interface Agent {
   full_name: string
   phone: string | null
   username: string
+  club_id: string | null
+  role: string | null
   region_id: string | null
   district_id: string | null
   schedule: string | null
   status: EntityStatus
+  settings: Record<string, unknown> | null
   created_at: string
   updated_at: string
 }

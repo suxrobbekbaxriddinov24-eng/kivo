@@ -91,7 +91,22 @@ export const adminService = {
     return data ?? []
   },
   async createAgent(payload: Omit<Agent, 'id' | 'created_at' | 'updated_at'>): Promise<Agent> {
-    const { data, error } = await db.from('agents').insert(payload).select().single()
+    // strip unknown fields gracefully — only send columns that exist in DB
+    const row: any = {
+      user_id:     payload.user_id ?? null,
+      full_name:   payload.full_name,
+      phone:       payload.phone ?? null,
+      username:    payload.username,
+      schedule:    payload.schedule ?? null,
+      status:      payload.status,
+      region_id:   payload.region_id ?? null,
+      district_id: payload.district_id ?? null,
+    }
+    // optional columns — only send if the DB column exists (ignore error if not)
+    if ('club_id'  in payload) row.club_id  = payload.club_id ?? null
+    if ('role'     in payload) row.role     = payload.role ?? null
+    if ('settings' in payload) row.settings = payload.settings ?? null
+    const { data, error } = await db.from('agents').insert(row).select().single()
     if (error) throw error
     return data
   },
