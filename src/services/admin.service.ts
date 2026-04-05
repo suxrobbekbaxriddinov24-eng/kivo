@@ -91,7 +91,8 @@ export const adminService = {
     return data ?? []
   },
   async createAgent(payload: Omit<Agent, 'id' | 'created_at' | 'updated_at'>): Promise<Agent> {
-    // strip unknown fields gracefully — only send columns that exist in DB
+    // club_id, role, password stored in settings JSONB — avoids needing extra columns
+    const existingSettings = (payload.settings ?? {}) as Record<string, unknown>
     const row: any = {
       user_id:     payload.user_id ?? null,
       full_name:   payload.full_name,
@@ -101,18 +102,23 @@ export const adminService = {
       status:      payload.status,
       region_id:   payload.region_id ?? null,
       district_id: payload.district_id ?? null,
+      settings: {
+        ...existingSettings,
+        club_id: payload.club_id ?? null,
+        role:    payload.role ?? null,
+      },
     }
-    // optional columns — only send if the DB column exists (ignore error if not)
-    if ('club_id'  in payload) row.club_id  = payload.club_id ?? null
-    if ('role'     in payload) row.role     = payload.role ?? null
-    if ('settings' in payload) row.settings = payload.settings ?? null
     const { data, error } = await db.from('agents').insert(row).select().single()
     if (error) throw error
     return data
   },
   async updateAgent(id: string, payload: Partial<Agent>): Promise<Agent> {
-    const { data, error } = await db
-      .from('agents').update({ ...payload, updated_at: new Date().toISOString() }).eq('id', id).select().single()
+    // Merge club_id and role into settings to avoid missing-column errors
+    const { club_id, role, settings, ...rest } = payload as any
+    const mergedSettings = { ...(settings ?? {}), ...(club_id !== undefined ? { club_id } : {}), ...(role !== undefined ? { role } : {}) }
+    const row: any = { ...rest, updated_at: new Date().toISOString() }
+    if (Object.keys(mergedSettings).length > 0) row.settings = mergedSettings
+    const { data, error } = await db.from('agents').update(row).eq('id', id).select().single()
     if (error) throw error
     return data
   },
