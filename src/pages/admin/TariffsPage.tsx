@@ -188,7 +188,7 @@ export default function TariffsPage() {
           </div>
 
           {/* Row 2: Narx (currency + amount) + Muddat */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-[2fr_1fr] gap-3">
             <div className="flex flex-col gap-1">
               <label className="text-sm text-gray-300 font-medium">Narx *</label>
               <div className="flex gap-1.5">
@@ -202,7 +202,8 @@ export default function TariffsPage() {
                   {currencies.length === 0 && <option value="">UZS — So'n</option>}
                 </select>
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
                   placeholder="299 000"
                   {...register('price')}
                   className="flex-1 min-w-0 bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#00ff88] focus:ring-1 focus:ring-[#00ff88]/40 transition"
