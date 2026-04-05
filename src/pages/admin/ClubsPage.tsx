@@ -17,7 +17,7 @@ import Select from '@/components/ui/Select'
 import PhoneInput from '@/components/ui/PhoneInput'
 import StatusBadge from '@/components/ui/StatusBadge'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
-import { Plus, Pencil, Trash2, Eye, Search } from 'lucide-react'
+import { Plus, Pencil, Trash2, Eye, EyeOff, Search } from 'lucide-react'
 import { UZ_REGIONS } from '@/lib/constants'
 
 const AVATAR_COLORS = ['#00ff88','#4a9eff','#ff9500','#9d5cff','#ff5c5c','#00d4ff','#ffd700','#ff6b9d']
@@ -44,6 +44,8 @@ export default function ClubsPage() {
   const [editClub, setEditClub] = useState<Club | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [search, setSearch] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [currentPassword, setCurrentPassword] = useState<string | null>(null)
 
   const { data: clubs = [], isLoading } = useQuery({ queryKey: ['clubs'], queryFn: clubsService.list })
   const { data: regions = [] } = useQuery({ queryKey: ['regions'], queryFn: adminService.listRegions })
@@ -69,6 +71,11 @@ export default function ClubsPage() {
     setValue('phone', c.phone ?? '')
     setValue('region_id', c.region_id ?? '')
     setValue('status', c.status)
+    setValue('password', '')
+    setShowPassword(false)
+    // Try to retrieve stored password from settings
+    const stored = (c.settings as any)?.director_password ?? null
+    setCurrentPassword(stored)
     setOpen(true)
   }
 
@@ -83,12 +90,16 @@ export default function ClubsPage() {
         region_id:    data.region_id || null,
         status:       data.status,
         address: null, district_id: null, tariff_id: null, tariff_expires_at: null, logo_url: null,
-        settings: { currency: 'UZS', timezone: 'Asia/Tashkent', discounts: { m1: 0, m3: 10, m6: 15, m12: 25 }, locker_count: 50 },
+        settings: { currency: 'UZS', timezone: 'Asia/Tashkent', discounts: { m1: 0, m3: 10, m6: 15, m12: 25 }, locker_count: 50, director_password: data.password || null },
       }
 
       if (editClub) {
+        // If password changed, update stored password in settings too
+        if (data.password) {
+          payload.settings = { ...editClub.settings, director_password: data.password } as any
+        }
         const updated = await clubsService.update(editClub.id, payload)
-        // Update password if provided
+        // Update Supabase auth password if provided
         if (data.password) {
           const { data: users } = await (supabase as any).auth.admin.listUsers()
           const user = users?.users?.find((u: any) => u.email === `${editClub.slug}@kivo.uz`)
@@ -279,13 +290,49 @@ export default function ClubsPage() {
               )}
             />
           </div>
-          <Input
-            label={isEdit ? 'Yangi parol (o\'zgartirish uchun)' : 'Admin Paroli *'}
-            type="password"
-            placeholder={isEdit ? 'Yangi parol kiriting' : 'Kirish paroli'}
-            error={errors.password?.message}
-            {...register('password')}
-          />
+          {/* Current password display (edit only) */}
+          {isEdit && currentPassword && (
+            <div className="flex flex-col gap-1">
+              <label className="text-sm text-gray-300 font-medium">Joriy parol</label>
+              <div className="relative flex items-center">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={currentPassword}
+                  readOnly
+                  className="w-full bg-gray-800/50 border border-gray-700 text-gray-300 rounded-lg px-3 pr-10 py-2 text-sm cursor-default"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(v => !v)}
+                  className="absolute right-3 text-gray-500 hover:text-gray-300 transition-colors"
+                >
+                  {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                </button>
+              </div>
+            </div>
+          )}
+          {/* New password field */}
+          <div className="flex flex-col gap-1">
+            <label className="text-sm text-gray-300 font-medium">
+              {isEdit ? "Yangi parol (o'zgartirish uchun)" : 'Admin Paroli *'}
+            </label>
+            <div className="relative flex items-center">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                placeholder={isEdit ? 'Bo\'sh qoldirsa o\'zgarmaydi' : 'Kirish paroli'}
+                {...register('password')}
+                className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 pr-10 py-2 text-sm placeholder:text-gray-600 focus:outline-none focus:border-[#00ff88] focus:ring-1 focus:ring-[#00ff88]/40 transition"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(v => !v)}
+                className="absolute right-3 text-gray-500 hover:text-gray-300 transition-colors"
+              >
+                {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+              </button>
+            </div>
+            {errors.password && <p className="text-xs text-red-400">{errors.password.message}</p>}
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <Select
               label="Viloyat"
