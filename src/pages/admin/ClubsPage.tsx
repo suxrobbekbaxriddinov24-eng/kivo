@@ -100,17 +100,31 @@ export default function ClubsPage() {
       }
 
       if (editClub) {
-        // If password changed, update stored password in settings too
         if (data.password) {
           payload.settings = { ...editClub.settings, director_password: data.password } as any
         }
         const updated = await clubsService.update(editClub.id, payload)
-        // Update Supabase auth password if provided
+        // Try update existing auth user password; if not found, create one
         if (data.password) {
-          const { data: users } = await (supabase as any).auth.admin.listUsers()
-          const user = users?.users?.find((u: any) => u.email === `${editClub.slug}@kivo.uz`)
-          if (user) {
-            await (supabase as any).auth.admin.updateUserById(user.id, { password: data.password })
+          const email = `${editClub.slug}@kivo.uz`
+          const { data: authData, error: authError } = await supabase.auth.signUp({
+            email,
+            password: data.password,
+            options: { data: { full_name: data.director_name, role: 'club_director' } },
+          })
+          // If already exists, signUp returns user with identities=[] — that's fine
+          if (authError && !authError.message.toLowerCase().includes('already registered')) {
+            // Non-fatal: club is already saved, just warn
+            toast.error(`Klub saqlandi, lekin login yaratishda xatolik: ${authError.message}`)
+          } else if (authData?.user?.id) {
+            await (supabase as any).from('profiles').upsert({
+              id: authData.user.id,
+              role: 'club_director',
+              club_id: editClub.id,
+              full_name: data.director_name,
+              phone: data.phone || null,
+              status: 'active',
+            })
           }
         }
         return updated
