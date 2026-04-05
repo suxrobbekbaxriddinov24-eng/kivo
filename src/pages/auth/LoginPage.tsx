@@ -8,7 +8,7 @@ import { toast } from '@/stores/uiStore'
 import { Mail, Lock, Eye, EyeOff, Dumbbell, UserCog, Users, ShieldCheck } from 'lucide-react'
 
 const schema = z.object({
-  email: z.string().email("To'g'ri email kiriting"),
+  identifier: z.string().min(1, "Login kiritilishi shart"),
   password: z.string().min(6, 'Kamida 6 ta belgi'),
 })
 type Form = z.infer<typeof schema>
@@ -47,7 +47,12 @@ export default function LoginPage() {
   const onSubmit = async (data: Form) => {
     setServerError('')
     try {
-      await login(data.email, data.password)
+      // Rahbar/Xodim use Klub ID → convert to @kivo.uz email
+      // Super Admin uses real email directly
+      const email = activeTab === 'superadmin'
+        ? data.identifier
+        : `${data.identifier.toLowerCase().trim()}@kivo.uz`
+      await login(email, data.password)
       const profile = useAuthStore.getState().profile
 
       // Enforce tab ↔ role match
@@ -121,19 +126,21 @@ export default function LoginPage() {
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            {/* Email */}
+            {/* Identifier */}
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Email</label>
+              <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                {activeTab === 'superadmin' ? 'Email' : 'Klub ID (Login)'}
+              </label>
               <div className="relative flex items-center">
                 <Mail size={15} className="absolute left-3 text-gray-500 pointer-events-none" />
                 <input
-                  type="email"
-                  placeholder="email@example.com"
-                  {...register('email')}
+                  type={activeTab === 'superadmin' ? 'email' : 'text'}
+                  placeholder={activeTab === 'superadmin' ? 'email@example.com' : 'masalan: arena1'}
+                  {...register('identifier')}
                   className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg pl-9 pr-3 py-2.5 text-sm placeholder:text-gray-600 focus:outline-none focus:border-[#00ff88] focus:ring-1 focus:ring-[#00ff88]/50 transition"
                 />
               </div>
-              {errors.email && <p className="text-xs text-red-400">{errors.email.message}</p>}
+              {errors.identifier && <p className="text-xs text-red-400">{errors.identifier.message}</p>}
             </div>
 
             {/* Password */}
