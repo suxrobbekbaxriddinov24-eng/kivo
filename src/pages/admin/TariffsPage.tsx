@@ -194,7 +194,7 @@ export default function TariffsPage() {
               <div className="flex gap-1.5">
                 <select
                   {...register('currency_id')}
-                  className="bg-gray-800 border border-gray-700 text-white rounded-lg px-2 py-2 text-xs focus:outline-none focus:border-[#00ff88] focus:ring-1 focus:ring-[#00ff88]/40 transition shrink-0"
+                  className="w-[110px] shrink-0 bg-gray-800 border border-gray-700 text-white rounded-lg px-2 py-2 text-xs focus:outline-none focus:border-[#00ff88] focus:ring-1 focus:ring-[#00ff88]/40 transition"
                 >
                   {currencies.map(c => (
                     <option key={c.id} value={c.id}>{c.code} — {c.name}</option>
