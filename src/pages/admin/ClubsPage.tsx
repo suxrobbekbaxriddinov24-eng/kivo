@@ -47,6 +47,7 @@ export default function ClubsPage() {
 
   const { data: clubs = [], isLoading } = useQuery({ queryKey: ['clubs'], queryFn: clubsService.list })
   const { data: regions = [] } = useQuery({ queryKey: ['regions'], queryFn: adminService.listRegions })
+  const { data: allBranches = [] } = useQuery({ queryKey: ['all-branches'], queryFn: () => (supabase as any).from('branches').select('id,club_id').then(({ data }: any) => data ?? []) })
 
   const { register, handleSubmit, reset, setValue, control, watch, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -198,7 +199,7 @@ export default function ClubsPage() {
                           >
                             {club.name}
                           </button>
-                          <p className="text-xs text-gray-600">0 ta filial</p>
+                          <p className="text-xs text-gray-600">{allBranches.filter((b: any) => b.club_id === club.id).length} ta filial</p>
                         </div>
                       </div>
                     </td>

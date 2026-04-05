@@ -6,6 +6,7 @@ import StatusBadge from '@/components/ui/StatusBadge'
 import { formatDate } from '@/lib/utils'
 import { Building2, Users, Tag, TrendingUp, Eye } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { supabase } from '@/lib/supabase'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
   PieChart, Pie, Legend,
@@ -29,6 +30,7 @@ export default function AdminDashboardPage() {
   const { data: clubs = [] } = useQuery({ queryKey: ['clubs'], queryFn: clubsService.list })
   const { data: agents = [] } = useQuery({ queryKey: ['agents'], queryFn: adminService.listAgents })
   const { data: tariffs = [] } = useQuery({ queryKey: ['tariffs'], queryFn: adminService.listTariffs })
+  const { data: allBranches = [] } = useQuery({ queryKey: ['all-branches'], queryFn: () => (supabase as any).from('branches').select('id,club_id').then(({ data }: any) => data ?? []) })
 
   const activeClubs = clubs.filter((c) => c.status === 'active')
   const newThisMonth = clubs.filter((c) => {
@@ -190,7 +192,7 @@ export default function AdminDashboardPage() {
                         <Link to={`/admin/clubs/${club.id}`} className="text-white font-medium hover:text-[#00ff88] transition-colors">
                           {club.name}
                         </Link>
-                        <p className="text-xs text-gray-500">0 ta filial</p>
+                        <p className="text-xs text-gray-500">{allBranches.filter((b: any) => b.club_id === club.id).length} ta filial</p>
                       </div>
                     </div>
                   </td>
