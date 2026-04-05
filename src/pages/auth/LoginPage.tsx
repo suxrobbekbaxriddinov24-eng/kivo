@@ -136,7 +136,7 @@ export default function LoginPage() {
                   placeholder={activeTab === 'superadmin' ? 'email@example.com' : 'masalan: arena1'}
                   autoComplete="username"
                   readOnly={idReadOnly}
-                  onFocus={() => setIdReadOnly(false)}
+                  onFocus={() => { setIdReadOnly(false); setPwdReadOnly(false) }}
                   {...register('identifier')}
                   className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg pl-9 pr-3 py-2.5 text-sm placeholder:text-gray-600 focus:outline-none focus:border-[#00ff88] focus:ring-1 focus:ring-[#00ff88]/50 transition"
                 />
