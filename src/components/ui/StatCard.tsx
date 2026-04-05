@@ -34,8 +34,9 @@ export default function StatCard({ title, value, sub, icon, color = 'brand', tre
         {sub && <p className="text-xs text-gray-500 mt-0.5">{sub}</p>}
       </div>
       {trend && (
-        <div className={cn('text-xs font-medium', trend.value >= 0 ? 'text-green-400' : 'text-red-400')}>
-          {trend.value >= 0 ? '+' : ''}{trend.value}% {trend.label}
+        <div className={cn('text-xs font-medium flex items-center gap-1', trend.value >= 0 ? 'text-green-400' : 'text-red-400')}>
+          <span>{trend.value >= 0 ? '↑' : '↓'}</span>
+          <span>{Math.abs(trend.value)}% {trend.label}</span>
         </div>
       )}
     </div>
