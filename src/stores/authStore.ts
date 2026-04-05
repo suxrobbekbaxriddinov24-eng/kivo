@@ -161,6 +161,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   setSession: async (session) => {
+    // Don't override Rahbar/Xodim custom session with Supabase auth events
+    if (localStorage.getItem(CUSTOM_SESSION_KEY)) return
+
     if (session?.user) {
       set({ session, user: session.user })
       const { data: profile } = await supabase
