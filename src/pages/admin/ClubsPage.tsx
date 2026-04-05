@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { clubsService } from '@/services/clubs.service'
 import { adminService } from '@/services/admin.service'
-import { supabase, supabaseAdmin } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase'
 import { toast } from '@/stores/uiStore'
 import { formatDate } from '@/lib/utils'
 import { useForm, Controller } from 'react-hook-form'
@@ -87,68 +87,27 @@ export default function ClubsPage() {
 
   const saveMutation = useMutation({
     mutationFn: async (data: FormData) => {
+      const baseSettings = editClub?.settings ?? { currency: 'UZS', timezone: 'Asia/Tashkent', discounts: { m1: 0, m3: 10, m6: 15, m12: 25 }, locker_count: 50 }
       const payload = {
-        name:         data.name,
+        name:          data.name,
         director_name: data.director_name,
-        slug:         data.login_id,
-        phone:        data.phone || null,
-        email:        `${data.login_id}@kivo.uz`,
-        region_id:    data.region_id || null,
-        status:       data.status,
+        slug:          data.login_id,
+        phone:         data.phone || null,
+        email:         null,
+        region_id:     data.region_id || null,
+        status:        data.status,
         address: null, district_id: null, tariff_id: null, tariff_expires_at: null, logo_url: null,
-        settings: { currency: 'UZS', timezone: 'Asia/Tashkent', discounts: { m1: 0, m3: 10, m6: 15, m12: 25 }, locker_count: 50, director_password: data.password || null },
-      }
-
-      const upsertAuthUser = async (email: string, password: string, clubId: string) => {
-        if (!supabaseAdmin) throw new Error('Service role key topilmadi. .env.local faylini tekshiring.')
-        // Find existing user first
-        const { data: list } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 })
-        const existing = list?.users?.find((u: any) => u.email === email)
-        let userId: string
-        if (existing) {
-          // Update password of existing user
-          const { error } = await supabaseAdmin.auth.admin.updateUserById(existing.id, { password })
-          if (error) throw new Error(`Parol yangilashda xatolik: ${error.message}`)
-          userId = existing.id
-        } else {
-          // Create new user
-          const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
-            email,
-            password,
-            email_confirm: true,
-            user_metadata: { role: 'club_director' },
-          })
-          if (error) throw new Error(`Login yaratishda xatolik: ${error.message}`)
-          userId = created.user.id
-        }
-        await supabase.from('profiles').upsert({
-          id: userId,
-          role: 'club_director',
-          club_id: clubId,
-          full_name: data.director_name,
-          phone: data.phone || null,
-          status: 'active',
-        } as any)
-        return userId
+        settings: {
+          ...baseSettings,
+          // Only update password if provided, otherwise keep existing
+          director_password: data.password || (baseSettings as any).director_password || null,
+        },
       }
 
       if (editClub) {
-        if (data.password) {
-          payload.settings = { ...editClub.settings, director_password: data.password } as any
-        }
-        const updated = await clubsService.update(editClub.id, payload)
-        if (data.password) {
-          await upsertAuthUser(`${editClub.slug}@kivo.uz`, data.password, editClub.id)
-        }
-        return updated
+        return clubsService.update(editClub.id, payload)
       }
-
-      // 1. Create auth user FIRST
-      const club = await clubsService.create(payload)
-      if (data.password) {
-        await upsertAuthUser(`${data.login_id}@kivo.uz`, data.password, club.id)
-      }
-      return club
+      return clubsService.create(payload)
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['clubs'] })

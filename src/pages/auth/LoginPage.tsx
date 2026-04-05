@@ -22,7 +22,7 @@ const tabs: { id: LoginType; label: string; icon: React.ReactNode }[] = [
 ]
 
 export default function LoginPage() {
-  const { login, isLoading } = useAuthStore()
+  const { login, customLogin, isLoading } = useAuthStore()
   const navigate = useNavigate()
   const [serverError, setServerError] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -47,26 +47,22 @@ export default function LoginPage() {
   const onSubmit = async (data: Form) => {
     setServerError('')
     try {
-      // Rahbar/Xodim use Klub ID → convert to @kivo.uz email
-      // Super Admin uses real email directly
-      const email = activeTab === 'superadmin'
-        ? data.identifier
-        : `${data.identifier.toLowerCase().trim()}@kivo.uz`
-      await login(email, data.password)
-      const profile = useAuthStore.getState().profile
-
-      // Enforce tab ↔ role match
-      if (profile?.role !== REQUIRED_ROLE[activeTab]) {
-        // Wrong role for selected tab — log out and show error
-        await useAuthStore.getState().logout()
-        setServerError(`Bu kirish turi faqat "${TAB_LABEL[activeTab]}" uchun. Iltimos to'g'ri tabni tanlang.`)
-        return
-      }
-
-      toast.success("Xush kelibsiz!")
-      if (profile.role === 'super_admin') {
+      if (activeTab === 'superadmin') {
+        // Super Admin: Supabase Auth with real email
+        await login(data.identifier, data.password)
+        const profile = useAuthStore.getState().profile
+        if (profile?.role !== 'super_admin') {
+          await useAuthStore.getState().logout()
+          setServerError("Bu login Super Admin uchun emas.")
+          return
+        }
+        toast.success("Xush kelibsiz!")
         navigate('/admin/dashboard', { replace: true })
       } else {
+        // Rahbar / Xodim: direct DB check, no Supabase Auth needed
+        const role = activeTab === 'rahbar' ? 'club_director' : 'staff'
+        await customLogin(data.identifier, data.password, role as any)
+        toast.success("Xush kelibsiz!")
         navigate('/dashboard', { replace: true })
       }
     } catch (err: unknown) {
