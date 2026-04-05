@@ -32,17 +32,38 @@ export default function LoginPage() {
     resolver: zodResolver(schema),
   })
 
+  const REQUIRED_ROLE: Record<LoginType, string> = {
+    rahbar:     'club_director',
+    xodim:      'staff',
+    superadmin: 'super_admin',
+  }
+
+  const TAB_LABEL: Record<LoginType, string> = {
+    rahbar:     'Rahbar',
+    xodim:      'Xodim',
+    superadmin: 'Super Admin',
+  }
+
   const onSubmit = async (data: Form) => {
     setServerError('')
     try {
       await login(data.email, data.password)
       const profile = useAuthStore.getState().profile
-      if (profile?.role === 'super_admin') {
+
+      // Enforce tab ↔ role match
+      if (profile?.role !== REQUIRED_ROLE[activeTab]) {
+        // Wrong role for selected tab — log out and show error
+        await useAuthStore.getState().logout()
+        setServerError(`Bu kirish turi faqat "${TAB_LABEL[activeTab]}" uchun. Iltimos to'g'ri tabni tanlang.`)
+        return
+      }
+
+      toast.success("Xush kelibsiz!")
+      if (profile.role === 'super_admin') {
         navigate('/admin/dashboard', { replace: true })
       } else {
         navigate('/dashboard', { replace: true })
       }
-      toast.success("Xush kelibsiz!")
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Xatolik yuz berdi'
       if (msg.includes('Invalid login') || msg.includes('credentials')) {
