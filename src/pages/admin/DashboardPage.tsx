@@ -12,7 +12,7 @@ import {
   PieChart, Pie, Legend,
 } from 'recharts'
 
-const DAYS = ['Du', 'Se', 'Ch', 'Pa', 'Ju', 'Sh', 'Ya']
+const DAY_SHORT = ['Ya', 'Du', 'Se', 'Ch', 'Pa', 'Ju', 'Sh'] // Sun=0..Sat=6
 
 // Color palette for club avatars
 const AVATAR_COLORS = [
@@ -39,20 +39,18 @@ export default function AdminDashboardPage() {
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
   })
 
-  // Generate bar chart data (last 7 days activity based on club registrations)
-  const barData = DAYS.map((day, i) => ({
-    day,
-    value: Math.max(
-      clubs.filter((c) => {
-        const d = new Date(c.created_at)
-        const dayOfWeek = d.getDay()
-        const mapped = dayOfWeek === 0 ? 6 : dayOfWeek - 1
-        return mapped === i
-      }).length,
-      i === 5 ? clubs.length : Math.floor(Math.random() * 0) // highlight Saturday
-    ),
-    highlight: i === 5,
-  }))
+  // Generate bar chart data — last 7 actual calendar days
+  const barData = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date()
+    d.setDate(d.getDate() - (6 - i))
+    const dateStr = d.toISOString().slice(0, 10) // YYYY-MM-DD
+    const isToday = i === 6
+    return {
+      day: DAY_SHORT[d.getDay()],
+      value: clubs.filter((c) => c.created_at.startsWith(dateStr)).length,
+      highlight: isToday,
+    }
+  })
 
   // Donut chart — real tariff usage from branches
   const branchesWithTariff = allBranches.filter((b: any) => b.tariff_id)
@@ -91,7 +89,7 @@ export default function AdminDashboardPage() {
         <div className="lg:col-span-2 bg-gray-900 border border-gray-800 rounded-xl p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-white font-semibold">Klublar faolligi</h2>
-            <span className="text-xs text-gray-500">Oxirgi 7 kun</span>
+            <span className="text-xs text-gray-500">So'nggi 7 kun (yangi klublar)</span>
           </div>
           <ResponsiveContainer width="100%" height={180}>
             <BarChart data={barData} barSize={32}>

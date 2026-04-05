@@ -1,8 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { supabase } from '@/lib/supabase'
-const db = supabase as any
 import type { Sale, PaymentMethod } from '@/types/database'
-import { startOfDayISO, startOfMonthISO } from '@/lib/utils'
+import { startOfDayISO, startOfMonthISO, isValidUUID, roundMoney } from '@/lib/utils'
 
 export interface BarSaleItem {
   product_id: string
@@ -24,11 +22,14 @@ export interface CreateBarSalePayload {
 
 export type FinancePeriod = 'today' | 'week' | 'month' | 'year'
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const db = supabase as any
+
 export const salesService = {
   async createBarSale(payload: CreateBarSalePayload): Promise<void> {
     const rows = payload.items.map((item) => {
-      const gross = item.unit_price * item.quantity
-      const discount = gross * (payload.discount_pct / 100)
+      const gross = roundMoney(item.unit_price * item.quantity)
+      const discount = roundMoney(gross * payload.discount_pct / 100)
       return {
         club_id: payload.club_id,
         branch_id: payload.branch_id ?? null,
@@ -40,16 +41,17 @@ export const salesService = {
         unit_price: item.unit_price,
         discount_pct: payload.discount_pct,
         amount: gross - discount,
-        purchase_cost: item.purchase_price * item.quantity,
+        purchase_cost: roundMoney(item.purchase_price * item.quantity),
         payment_method: payload.payment_method,
-        sold_by: payload.sold_by,
+        // Only write a real UUID to the FK column
+        sold_by: isValidUUID(payload.sold_by) ? payload.sold_by : null,
       }
     })
     const { error } = await db.from('sales').insert(rows)
     if (error) throw error
   },
 
-  async list(clubId: string, period: FinancePeriod = 'month'): Promise<Sale[]> {
+  async list(clubId: string, period: FinancePeriod = 'month', limit = 200): Promise<Sale[]> {
     const from = periodStart(period)
     const { data, error } = await db
       .from('sales')
@@ -57,6 +59,7 @@ export const salesService = {
       .eq('club_id', clubId)
       .gte('created_at', from)
       .order('created_at', { ascending: false })
+      .limit(limit)
     if (error) throw error
     return data ?? []
   },

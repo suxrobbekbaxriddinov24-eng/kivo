@@ -46,14 +46,23 @@ export default function POSPage() {
   const addToCart = (product: Product) => {
     setCart((prev) => {
       const existing = prev.find((i) => i.product.id === product.id)
-      if (existing) return prev.map((i) => i.product.id === product.id ? { ...i, qty: i.qty + 1 } : i)
+      if (existing) {
+        // H-5: Don't exceed available stock
+        if (existing.qty >= product.quantity) return prev
+        return prev.map((i) => i.product.id === product.id ? { ...i, qty: i.qty + 1 } : i)
+      }
       return [...prev, { product, qty: 1 }]
     })
   }
 
   const updateQty = (productId: string, delta: number) => {
     setCart((prev) => prev
-      .map((i) => i.product.id === productId ? { ...i, qty: Math.max(0, i.qty + delta) } : i)
+      .map((i) => {
+        if (i.product.id !== productId) return i
+        // H-5: Clamp to [0, available stock]
+        const newQty = Math.max(0, Math.min(i.qty + delta, i.product.quantity))
+        return { ...i, qty: newQty }
+      })
       .filter((i) => i.qty > 0)
     )
   }

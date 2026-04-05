@@ -88,3 +88,14 @@ export function startOfMonthISO(date = new Date()): string {
   const d = new Date(date.getFullYear(), date.getMonth(), 1)
   return d.toISOString()
 }
+
+/** Returns true if the string is a valid UUID v4 */
+export function isValidUUID(s: string | null | undefined): boolean {
+  if (!s) return false
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s)
+}
+
+/** Round money to avoid floating point errors */
+export function roundMoney(amount: number): number {
+  return Math.round(amount)
+}

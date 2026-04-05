@@ -1,7 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { supabase } from '@/lib/supabase'
-const db = supabase as any
 import type { Subscription, PaymentMethod, Plan } from '@/types/database'
+import { isValidUUID, roundMoney } from '@/lib/utils'
 import { addDays } from 'date-fns'
 
 export interface CreateSubscriptionPayload {
@@ -16,6 +15,9 @@ export interface CreateSubscriptionPayload {
   notes?: string
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const db = supabase as any
+
 export const subscriptionsService = {
   async create(payload: CreateSubscriptionPayload): Promise<Subscription> {
     const { plan, duration_months, ...rest } = payload
@@ -23,6 +25,9 @@ export const subscriptionsService = {
     const expires_at = plan.duration_type === 'daily'
       ? addDays(starts_at, plan.duration_value * duration_months)
       : null
+
+    // Use Math.round to avoid floating point errors in money fields
+    const amount_paid = roundMoney(rest.amount_paid)
 
     const { data: sub, error: subErr } = await db
       .from('subscriptions')
@@ -35,14 +40,15 @@ export const subscriptionsService = {
         duration_type: plan.duration_type,
         duration_value: plan.duration_value * duration_months,
         discount_pct: rest.discount_pct,
-        amount_paid: rest.amount_paid,
+        amount_paid,
         payment_method: rest.payment_method,
         starts_at: starts_at.toISOString(),
         expires_at: expires_at?.toISOString() ?? null,
         visits_total: plan.duration_type === 'visit_based' ? plan.duration_value * duration_months : null,
         visits_used: 0,
         status: 'active',
-        sold_by: rest.sold_by,
+        // Only write a real UUID to the FK column
+        sold_by: isValidUUID(rest.sold_by) ? rest.sold_by : null,
         notes: rest.notes ?? null,
       })
       .select()
@@ -58,10 +64,10 @@ export const subscriptionsService = {
       quantity: 1,
       unit_price: plan.price,
       discount_pct: rest.discount_pct,
-      amount: rest.amount_paid,
+      amount: amount_paid,
       purchase_cost: 0,
       payment_method: rest.payment_method,
-      sold_by: rest.sold_by,
+      sold_by: isValidUUID(rest.sold_by) ? rest.sold_by : null,
     })
 
     return sub

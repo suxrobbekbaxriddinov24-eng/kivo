@@ -3,6 +3,7 @@ import type { Session, User } from '@supabase/supabase-js'
 import { supabase, supabaseAdmin } from '@/lib/supabase'
 import type { Profile, UserRole } from '@/types/database'
 
+// Legacy fallback: used only when supabaseAdmin is not available
 const CUSTOM_SESSION_KEY = 'kivo_custom_session'
 
 interface CustomSession {
@@ -13,7 +14,6 @@ interface CustomSession {
   loginId: string
 }
 
-// Build a fake Profile object from a custom session
 function buildFakeProfile(cs: CustomSession): Profile {
   return {
     id: `custom_${cs.loginId}`,
@@ -29,19 +29,18 @@ function buildFakeProfile(cs: CustomSession): Profile {
   }
 }
 
+/** Email used for Supabase Auth for club directors — never shown to users */
+export function directorEmail(slug: string): string {
+  return `${slug.toLowerCase().trim()}@kivo.internal`
+}
+
 interface AuthState {
   session: Session | null
   user: User | null
   profile: Profile | null
   isLoading: boolean
   isInitialized: boolean
-
-  role: UserRole | null
-  clubId: string | null
-  branchId: string | null
-  isSuperAdmin: boolean
-  isDirector: boolean
-  isStaff: boolean
+  initError: boolean
 
   initialize: () => Promise<void>
   login: (email: string, password: string) => Promise<void>
@@ -51,24 +50,23 @@ interface AuthState {
   refreshProfile: () => Promise<void>
 }
 
+// NOTE: Do NOT add getter-style properties (get role() { return get().profile?.role })
+// to the Zustand state object. Zustand's Object.assign merges lose property descriptors
+// after the first set() call, so getters become stale. Use the selector functions below
+// or access profile.role directly in components.
+
 export const useAuthStore = create<AuthState>((set, get) => ({
   session: null,
   user: null,
   profile: null,
   isLoading: false,
   isInitialized: false,
-
-  get role() { return get().profile?.role ?? null },
-  get clubId() { return get().profile?.club_id ?? null },
-  get branchId() { return get().profile?.branch_id ?? null },
-  get isSuperAdmin() { return get().profile?.role === 'super_admin' },
-  get isDirector() { return get().profile?.role === 'club_director' },
-  get isStaff() { return get().profile?.role === 'staff' },
+  initError: false,
 
   initialize: async () => {
-    set({ isLoading: true })
+    set({ isLoading: true, initError: false })
     try {
-      // 1. Check custom session (Rahbar/Xodim) first
+      // 1. Check legacy custom session (Rahbar/Xodim without Supabase Auth)
       const raw = localStorage.getItem(CUSTOM_SESSION_KEY)
       if (raw) {
         try {
@@ -80,16 +78,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         }
       }
 
-      // 2. Check Supabase session (Super Admin)
+      // 2. Check Supabase session (Super Admin + migrated Directors)
       const { data: { session } } = await supabase.auth.getSession()
       if (session?.user) {
-        const { data: profile } = await supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: profile } = await (supabase as any)
           .from('profiles')
           .select('*')
           .eq('id', session.user.id)
           .single()
         set({ session, user: session.user, profile })
       }
+    } catch {
+      set({ initError: true })
     } finally {
       set({ isLoading: false, isInitialized: true })
     }
@@ -103,7 +104,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (error) throw error
       if (!data.session) throw new Error('No session returned')
 
-      const { data: profile, error: profileError } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: profile, error: profileError } = await (supabase as any)
         .from('profiles')
         .select('*')
         .eq('id', data.session.user.id)
@@ -116,29 +118,92 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  // Rahbar / Xodim login — checks DB directly, no Supabase Auth needed
+  // Club Director login — uses real Supabase Auth with auto-migration from legacy system
   customLogin: async (loginId: string, password: string, role: 'club_director' | 'staff') => {
     set({ isLoading: true })
     try {
       if (role === 'club_director') {
+        const email = directorEmail(loginId)
+
+        // Step 1: Try real Supabase Auth login (works for already-migrated directors)
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+
+        if (signInData?.session) {
+          // Real auth session — fetch profile
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { data: profile } = await (supabase as any)
+            .from('profiles')
+            .select('*')
+            .eq('id', signInData.session.user.id)
+            .single()
+          set({ session: signInData.session, user: signInData.session.user, profile })
+          return
+        }
+
+        // Step 2: Supabase Auth failed — try legacy password check + auto-migrate
         const client = supabaseAdmin ?? (supabase as any)
-        const { data: clubs, error } = await client
+        const { data: club, error: clubError } = await client
           .from('clubs')
           .select('id, name, slug, settings, status')
           .eq('slug', loginId.toLowerCase().trim())
           .single()
 
-        if (error || !clubs) throw new Error("Login ID topilmadi")
-        if (clubs.status !== 'active') throw new Error("Bu klub bloklangan yoki nofaol")
+        if (clubError || !club) throw new Error('Login ID topilmadi')
+        if (club.status !== 'active') throw new Error('Bu klub bloklangan yoki nofaol')
 
-        const storedPwd = clubs.settings?.director_password
-        if (!storedPwd) throw new Error("Parol o'rnatilmagan. Super admindan so'rang.")
+        const storedPwd = club.settings?.director_password
+        if (!storedPwd) {
+          // No legacy password either — re-throw the original Supabase Auth error
+          throw new Error(signInError?.message?.includes('Invalid') ? "Login yoki parol noto'g'ri" : (signInError?.message ?? "Login yoki parol noto'g'ri"))
+        }
         if (storedPwd !== password) throw new Error("Login yoki parol noto'g'ri")
 
+        // Legacy password matched — attempt auto-migration to Supabase Auth
+        if (supabaseAdmin) {
+          try {
+            const { data: authUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+              email,
+              password,
+              email_confirm: true,
+            })
+
+            if (!createError && authUser?.user) {
+              // Create/upsert profile for the new auth user
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              await (supabaseAdmin as any).from('profiles').upsert({
+                id: authUser.user.id,
+                role: 'club_director',
+                club_id: club.id,
+                branch_id: null,
+                full_name: club.name,
+                phone: null,
+                avatar_url: null,
+                status: 'active',
+              })
+
+              // Sign in with the newly created Supabase Auth user
+              const { data: newSession } = await supabase.auth.signInWithPassword({ email, password })
+              if (newSession?.session) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const { data: profile } = await (supabase as any)
+                  .from('profiles')
+                  .select('*')
+                  .eq('id', newSession.session.user.id)
+                  .single()
+                set({ session: newSession.session, user: newSession.session.user, profile })
+                return
+              }
+            }
+          } catch {
+            // Auto-migration failed — fall through to legacy custom session
+          }
+        }
+
+        // Final fallback: legacy custom session (when supabaseAdmin unavailable)
         const cs: CustomSession = {
-          clubId: clubs.id,
+          clubId: club.id,
           branchId: null,
-          fullName: clubs.name,
+          fullName: club.name,
           role: 'club_director',
           loginId,
         }
@@ -146,8 +211,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         set({ profile: buildFakeProfile(cs) })
 
       } else {
-        // Staff: check branches table (future use)
-        throw new Error("Xodim login hali ishga tushirilmagan")
+        // Staff: not yet implemented
+        throw new Error('Xodim login hali ishga tushirilmagan')
       }
     } finally {
       set({ isLoading: false })
@@ -161,18 +226,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   setSession: async (session) => {
-    // Don't override Rahbar/Xodim custom session with Supabase auth events
+    // Don't override legacy custom session with Supabase auth state changes
     if (localStorage.getItem(CUSTOM_SESSION_KEY)) return
 
     if (session?.user) {
       set({ session, user: session.user })
-      const { data: profile } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: profile } = await (supabase as any)
         .from('profiles')
         .select('*')
         .eq('id', session.user.id)
         .single()
       set({ profile })
     } else {
+      // Only clear profile if this is a real Supabase session (not a legacy custom one)
+      if (!get().profile || get().profile?.id?.startsWith('custom_')) return
       set({ session: null, user: null, profile: null })
     }
   },
@@ -180,7 +248,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   refreshProfile: async () => {
     const userId = get().user?.id
     if (!userId) return
-    const { data: profile } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: profile } = await (supabase as any)
       .from('profiles')
       .select('*')
       .eq('id', userId)
@@ -188,3 +257,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (profile) set({ profile })
   },
 }))
+
+/** Computed selectors — use these in components instead of destructuring */
+export const selectRole = (s: ReturnType<typeof useAuthStore.getState>): ReturnType<typeof useAuthStore.getState>['profile'] extends null ? null : UserRole | null =>
+  s.profile?.role ?? null
+export const selectClubId = (s: ReturnType<typeof useAuthStore.getState>): string | null => s.profile?.club_id ?? null
+export const selectIsDirector = (s: ReturnType<typeof useAuthStore.getState>): boolean => s.profile?.role === 'club_director'
+export const selectIsStaff = (s: ReturnType<typeof useAuthStore.getState>): boolean => s.profile?.role === 'staff'
+export const selectIsSuperAdmin = (s: ReturnType<typeof useAuthStore.getState>): boolean => s.profile?.role === 'super_admin'

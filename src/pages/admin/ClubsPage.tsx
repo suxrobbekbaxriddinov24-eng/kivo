@@ -3,7 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { clubsService } from '@/services/clubs.service'
 import { adminService } from '@/services/admin.service'
-import { supabase } from '@/lib/supabase'
+import { supabase, supabaseAdmin } from '@/lib/supabase'
+import { directorEmail } from '@/stores/authStore'
 import { toast } from '@/stores/uiStore'
 import { formatDate } from '@/lib/utils'
 import { useForm, Controller } from 'react-hook-form'
@@ -99,15 +100,57 @@ export default function ClubsPage() {
         address: null, district_id: null, tariff_id: null, tariff_expires_at: null, logo_url: null,
         settings: {
           ...baseSettings,
-          // Only update password if provided, otherwise keep existing
+          // Keep legacy password field for backward compatibility fallback
           director_password: data.password || (baseSettings as any).director_password || null,
         },
       }
 
       if (editClub) {
-        return clubsService.update(editClub.id, payload)
+        const updated = await clubsService.update(editClub.id, payload)
+        // If a new password was provided, also update the Supabase Auth user
+        if (data.password && supabaseAdmin) {
+          try {
+            const email = directorEmail(editClub.slug ?? data.login_id)
+            const { data: { users } } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 })
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const authUser = (users as any[]).find((u) => u.email === email)
+            if (authUser) {
+              await supabaseAdmin.auth.admin.updateUserById(authUser.id, { password: data.password })
+            }
+          } catch { /* non-fatal — legacy password in settings is still updated */ }
+        }
+        return updated
       }
-      return clubsService.create(payload)
+
+      // Create new club
+      const created = await clubsService.create(payload)
+
+      // Create Supabase Auth user for the director so they can use real auth login
+      if (data.password && supabaseAdmin) {
+        try {
+          const email = directorEmail(data.login_id)
+          const { data: authUser, error: createErr } = await supabaseAdmin.auth.admin.createUser({
+            email,
+            password: data.password,
+            email_confirm: true,
+          })
+          if (!createErr && authUser?.user) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await (supabaseAdmin as any).from('profiles').upsert({
+              id: authUser.user.id,
+              role: 'club_director',
+              club_id: created.id,
+              branch_id: null,
+              full_name: data.director_name,
+              phone: data.phone || null,
+              avatar_url: null,
+              status: 'active',
+            })
+          }
+        } catch { /* non-fatal — director can still log in via legacy method */ }
+      }
+
+      return created
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['clubs'] })
@@ -349,7 +392,7 @@ export default function ClubsPage() {
         onClose={() => setDeleteId(null)}
         onConfirm={() => deleteId && deleteMutation.mutate(deleteId)}
         loading={deleteMutation.isPending}
-        message="Klubni o'chirishni tasdiqlaysizmi? Barcha ma'lumotlar yo'qoladi."
+        message={`Klubni o'chirishni tasdiqlaysizmi? Bu amalni ortga qaytarib bo'lmaydi — barcha mijozlar, obunalar, sotuv tarixi va boshqa ma'lumotlar butunlay o'chib ketadi.`}
       />
     </div>
   )

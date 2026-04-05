@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
 import { customersService } from '@/services/customers.service'
 import { subscriptionsService } from '@/services/subscriptions.service'
 import { plansService } from '@/services/plans.service'
+import { clubsService } from '@/services/clubs.service'
 import { toast } from '@/stores/uiStore'
 import Button from '@/components/ui/Button'
 import DataTable from '@/components/ui/DataTable'
@@ -46,12 +47,27 @@ export default function CustomersPage() {
   const clubId = profile?.club_id!
   const qc = useQueryClient()
   const navigate = useNavigate()
+  const location = useLocation()
 
   const [addOpen, setAddOpen] = useState(false)
   const [subOpen, setSubOpen] = useState(false)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [subCustomerId, setSubCustomerId] = useState<string | null>(null)
-  const [step, setStep] = useState<1 | 2>(1)
+
+  // Open add modal if navigated here with state
+  useEffect(() => {
+    if (location.state?.openAdd) {
+      setAddOpen(true)
+      window.history.replaceState({}, '')
+    }
+  }, [location.state])
+
+  // H-2: Mark expired subscriptions as expired when the page loads
+  useEffect(() => {
+    if (clubId) {
+      subscriptionsService.expireStale(clubId).catch(() => {/* non-fatal */})
+    }
+  }, [clubId])
 
   const { data: customers = [], isLoading } = useQuery({
     queryKey: ['customers', clubId],
@@ -64,6 +80,15 @@ export default function CustomersPage() {
     queryFn: () => plansService.list(clubId),
     enabled: !!clubId,
   })
+
+  // H-4: Fetch club settings for per-club discount configuration
+  const { data: club } = useQuery({
+    queryKey: ['club', clubId],
+    queryFn: () => clubsService.get(clubId),
+    enabled: !!clubId,
+    staleTime: 5 * 60_000,
+  })
+  const clubDiscounts = (club?.settings?.discounts as typeof DEFAULT_DISCOUNTS) ?? DEFAULT_DISCOUNTS
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -80,8 +105,10 @@ export default function CustomersPage() {
   const watchedDuration = watch('duration_months')
   const selectedPlan = plans.find((p) => p.id === watchedPlanId)
   const discountKey = `m${watchedDuration}` as keyof typeof DEFAULT_DISCOUNTS
-  const discount = DEFAULT_DISCOUNTS[discountKey] ?? 0
-  const total = selectedPlan ? selectedPlan.price * watchedDuration * (1 - discount / 100) : 0
+  // H-4: use per-club discounts, fallback to DEFAULT_DISCOUNTS
+  const discount = (clubDiscounts[discountKey] ?? DEFAULT_DISCOUNTS[discountKey]) ?? 0
+  const rawTotal = selectedPlan ? selectedPlan.price * watchedDuration * (1 - discount / 100) : 0
+  const total = Math.round(rawTotal)
 
   const createMutation = useMutation({
     mutationFn: (data: FormData) =>
@@ -109,8 +136,8 @@ export default function CustomersPage() {
     mutationFn: async (data: SubFormData) => {
       const plan = plans.find((p) => p.id === data.plan_id)!
       const discKey = `m${data.duration_months}` as keyof typeof DEFAULT_DISCOUNTS
-      const disc = DEFAULT_DISCOUNTS[discKey] ?? 0
-      const amount = plan.price * data.duration_months * (1 - disc / 100)
+      const disc = (clubDiscounts[discKey] ?? DEFAULT_DISCOUNTS[discKey]) ?? 0
+      const amount = Math.round(plan.price * data.duration_months * (1 - disc / 100))
       await subscriptionsService.create({
         club_id: clubId,
         customer_id: subCustomerId!,
@@ -123,7 +150,10 @@ export default function CustomersPage() {
       })
     },
     onSuccess: () => {
+      // L-6: Invalidate all related queries
       qc.invalidateQueries({ queryKey: ['customers', clubId] })
+      qc.invalidateQueries({ queryKey: ['stats', clubId] })
+      if (subCustomerId) qc.invalidateQueries({ queryKey: ['customer', subCustomerId] })
       toast.success('Obuna yaratildi')
       resetSub()
       setSubOpen(false)
@@ -133,9 +163,27 @@ export default function CustomersPage() {
   })
 
   const checkInMutation = useMutation({
-    mutationFn: (customerId: string) =>
-      customersService.checkIn(customerId, clubId, profile!.id),
-    onSuccess: () => toast.success('Kirish qayd etildi'),
+    mutationFn: (customerId: string) => {
+      // H-3: Validate subscription before allowing check-in
+      const customer = customers.find((c) => c.id === customerId)
+      const sub = customer?.active_subscription
+
+      if (!sub) throw new Error("Mijozning faol obunasi yo'q")
+
+      if (sub.expires_at && new Date(sub.expires_at) < new Date()) {
+        throw new Error('Obuna muddati tugagan')
+      }
+
+      if (sub.duration_type === 'visit_based' && sub.visits_total !== null && sub.visits_used >= sub.visits_total) {
+        throw new Error('Tashrif limiti tugagan')
+      }
+
+      return customersService.checkIn(customerId, clubId, profile!.id, sub.id)
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['customers', clubId] })
+      toast.success('Kirish qayd etildi')
+    },
     onError: (e: Error) => toast.error(e.message),
   })
 
@@ -294,7 +342,7 @@ export default function CustomersPage() {
             label="Muddat"
             options={PLAN_DURATIONS.map((d) => ({
               value: String(d.value),
-              label: `${d.label} (−${DEFAULT_DISCOUNTS[d.discountKey as keyof typeof DEFAULT_DISCOUNTS]}%)`,
+              label: `${d.label} (−${clubDiscounts[d.discountKey as keyof typeof DEFAULT_DISCOUNTS] ?? 0}%)`,
             }))}
             {...regSub('duration_months')}
           />
@@ -312,7 +360,7 @@ export default function CustomersPage() {
               {discount > 0 && (
                 <div className="flex justify-between text-green-400">
                   <span>Chegirma ({discount}%)</span>
-                  <span>−{formatCurrency(selectedPlan.price * watchedDuration * discount / 100)}</span>
+                  <span>−{formatCurrency(Math.round(selectedPlan.price * watchedDuration * discount / 100))}</span>
                 </div>
               )}
               <div className="flex justify-between text-white font-semibold border-t border-gray-700 pt-2 mt-2">
