@@ -59,6 +59,10 @@ export interface Branch {
   phone: string | null
   manager: string | null
   status: EntityStatus
+  tariff_id: string | null
+  tariff_name: string | null
+  tariff_starts_at: string | null
+  tariff_ends_at: string | null
   created_at: string
   updated_at: string
 }
