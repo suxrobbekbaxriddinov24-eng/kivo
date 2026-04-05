@@ -69,34 +69,10 @@ export default function AdminDashboardPage() {
     <div className="space-y-5">
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Jami klublar"
-          value={clubs.length}
-          sub={`${activeClubs.length} faol`}
-          icon={<Building2 size={17} />}
-          color="brand"
-          trend={{ value: 13, label: "o'tgan oyga nisbatan" }}
-        />
-        <StatCard
-          title="Faol filiallar"
-          value={activeClubs.length}
-          icon={<TrendingUp size={17} />}
-          color="green"
-          trend={{ value: 8, label: "o'tgan oyga nisbatan" }}
-        />
-        <StatCard
-          title="Agentlar"
-          value={agents.length}
-          icon={<Users size={17} />}
-          color="blue"
-          trend={{ value: 2, label: "o'tgan oyga nisbatan" }}
-        />
-        <StatCard
-          title="Tariflar"
-          value={tariffs.length}
-          icon={<Tag size={17} />}
-          color="yellow"
-        />
+        <StatCard title="Jami klublar"    value={clubs.length}        sub={`${activeClubs.length} faol`}        icon={<Building2 size={17} />} color="brand" />
+        <StatCard title="Faol filiallar"  value={allBranches.length}  sub={`${clubs.length} ta klubda`}        icon={<TrendingUp size={17} />} color="green" />
+        <StatCard title="Agentlar"        value={agents.length}                                                 icon={<Users size={17} />}     color="blue" />
+        <StatCard title="Tariflar"        value={tariffs.length}                                                icon={<Tag size={17} />}       color="yellow" />
       </div>
 
       {/* Charts row */}
