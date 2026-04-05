@@ -67,7 +67,6 @@ function AppRoutes() {
     <Routes>
       {/* Public */}
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/admin/login" element={<LoginPage />} />
       <Route path="/set-password" element={<SetPasswordPage />} />
 
       {/* Super Admin */}
@@ -122,6 +121,7 @@ function AppRoutes() {
         } />
       </Route>
 
+      <Route path="/admin/login" element={<Navigate to="/login" replace />} />
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   )

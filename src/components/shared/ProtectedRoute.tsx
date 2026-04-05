@@ -22,8 +22,7 @@ export default function ProtectedRoute({ allowedRoles, children }: Props) {
   }
 
   if (!profile) {
-    const loginPath = allowedRoles.includes('super_admin') ? '/admin/login' : '/login'
-    return <Navigate to={loginPath} replace />
+    return <Navigate to="/login" replace />
   }
 
   if (!allowedRoles.includes(profile.role)) {
