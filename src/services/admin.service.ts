@@ -35,6 +35,10 @@ export const adminService = {
     if (error) throw error
     return data
   },
+  async deleteDistrict(id: string): Promise<void> {
+    const { error } = await db.from('districts').delete().eq('id', id)
+    if (error) throw error
+  },
 
   // Currencies
   async listCurrencies(): Promise<Currency[]> {

@@ -61,7 +61,13 @@ export default function ClubsPage() {
     (c.director_name ?? '').toLowerCase().includes(search.toLowerCase())
   )
 
-  const openAdd = () => { reset(); setEditClub(null); setOpen(true) }
+  const openAdd = () => {
+    reset({ name: '', director_name: '', login_id: '', phone: '', password: '', region_id: '', status: 'active' })
+    setEditClub(null)
+    setShowPassword(false)
+    setCurrentPassword(null)
+    setOpen(true)
+  }
 
   const openEdit = (c: Club) => {
     setEditClub(c)
@@ -110,39 +116,51 @@ export default function ClubsPage() {
         return updated
       }
 
-      // Create club
-      const club = await clubsService.create(payload)
-
-      // Create Supabase auth user for the director
+      // 1. Create auth user FIRST — if this fails, club won't be created
+      let authUserId: string | null = null
       if (data.password) {
         const { data: authData, error: authError } = await supabase.auth.signUp({
           email: `${data.login_id}@kivo.uz`,
           password: data.password,
           options: { data: { full_name: data.director_name, role: 'club_director' } },
         })
-        if (authError && !authError.message.includes('already registered')) {
-          throw authError
+        if (authError && !authError.message.toLowerCase().includes('already registered')) {
+          throw new Error(`Login yaratishda xatolik: ${authError.message}`)
         }
-        // Update profile if user was created
-        if (authData?.user?.id) {
-          await (supabase as any).from('profiles').upsert({
-            id: authData.user.id,
-            role: 'club_director',
-            club_id: club.id,
-            full_name: data.director_name,
-            phone: data.phone || null,
-            status: 'active',
-          })
-        }
+        authUserId = authData?.user?.id ?? null
+      }
+
+      // 2. Create club only after auth succeeds
+      const club = await clubsService.create(payload)
+
+      // 3. Link profile
+      if (authUserId) {
+        await (supabase as any).from('profiles').upsert({
+          id: authUserId,
+          role: 'club_director',
+          club_id: club.id,
+          full_name: data.director_name,
+          phone: data.phone || null,
+          status: 'active',
+        })
       }
       return club
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['clubs'] })
       toast.success(editClub ? 'Klub yangilandi' : "Klub qo'shildi")
-      reset(); setOpen(false); setEditClub(null)
+      reset({ name: '', director_name: '', login_id: '', phone: '', password: '', region_id: '', status: 'active' }); setOpen(false); setEditClub(null)
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => {
+      const msg = e.message
+      if (msg.includes('clubs_slug_key') || msg.includes('slug')) {
+        toast.error('Bu Klub ID allaqachon band. Boshqa ID kiriting.')
+      } else if (msg.includes('duplicate') || msg.includes('unique')) {
+        toast.error('Bu ma\'lumot allaqachon mavjud.')
+      } else {
+        toast.error(msg)
+      }
+    },
   })
 
   const deleteMutation = useMutation({
@@ -223,7 +241,7 @@ export default function ClubsPage() {
                     </td>
                     <td className="px-4 py-3 text-gray-300">{club.director_name ?? '—'}</td>
                     <td className="px-4 py-3 text-gray-400">{club.phone ?? '—'}</td>
-                    <td className="px-4 py-3 text-gray-400">0 ta</td>
+                    <td className="px-4 py-3 text-gray-400">{allBranches.filter((b: any) => b.club_id === club.id).length} ta</td>
                     <td className="px-4 py-3"><StatusBadge status={club.status} /></td>
                     <td className="px-4 py-3 text-gray-400">{formatDate(club.created_at)}</td>
                     <td className="px-4 py-3">
@@ -252,7 +270,7 @@ export default function ClubsPage() {
       {/* Modal */}
       <Modal
         open={open}
-        onClose={() => { setOpen(false); setEditClub(null); reset() }}
+        onClose={() => { setOpen(false); setEditClub(null); reset({ name: '', director_name: '', login_id: '', phone: '', password: '', region_id: '', status: 'active' }) }}
         title={isEdit ? 'Klubni tahrirlash' : "Yangi klub qo'shish"}
         size="md"
       >
@@ -352,7 +370,7 @@ export default function ClubsPage() {
           </div>
         </div>
         <div className="flex justify-end gap-3 mt-5 pt-4 border-t border-gray-800">
-          <Button variant="ghost" onClick={() => { setOpen(false); setEditClub(null); reset() }}>Bekor qilish</Button>
+          <Button variant="ghost" onClick={() => { setOpen(false); setEditClub(null); reset({ name: '', director_name: '', login_id: '', phone: '', password: '', region_id: '', status: 'active' }) }}>Bekor qilish</Button>
           <Button loading={saveMutation.isPending} onClick={handleSubmit(d => saveMutation.mutate(d))}>
             ✓ Saqlash
           </Button>
