@@ -30,7 +30,7 @@ export default function AdminDashboardPage() {
   const { data: clubs = [] } = useQuery({ queryKey: ['clubs'], queryFn: clubsService.list })
   const { data: agents = [] } = useQuery({ queryKey: ['agents'], queryFn: adminService.listAgents })
   const { data: tariffs = [] } = useQuery({ queryKey: ['tariffs'], queryFn: adminService.listTariffs })
-  const { data: allBranches = [] } = useQuery({ queryKey: ['all-branches'], queryFn: () => (supabase as any).from('branches').select('id,club_id').then(({ data }: any) => data ?? []) })
+  const { data: allBranches = [] } = useQuery({ queryKey: ['all-branches'], queryFn: () => (supabase as any).from('branches').select('id,club_id,tariff_id,tariff_name').then(({ data }: any) => data ?? []) })
 
   const activeClubs = clubs.filter((c) => c.status === 'active')
   const newThisMonth = clubs.filter((c) => {
@@ -54,15 +54,25 @@ export default function AdminDashboardPage() {
     highlight: i === 5,
   }))
 
-  // Donut chart data from tariffs
-  const total = tariffs.length || 1
-  const pieData = tariffs.slice(0, 5).map((t, i) => ({
-    name: t.name,
-    value: Math.round((1 / total) * 100),
-    color: PIE_COLORS[i % PIE_COLORS.length],
-  }))
+  // Donut chart — real tariff usage from branches
+  const branchesWithTariff = allBranches.filter((b: any) => b.tariff_id)
+  const totalWithTariff = branchesWithTariff.length || 1
+  const tariffUsage: Record<string, { name: string; count: number }> = {}
+  allBranches.forEach((b: any) => {
+    if (!b.tariff_id) return
+    if (!tariffUsage[b.tariff_id]) tariffUsage[b.tariff_id] = { name: b.tariff_name ?? b.tariff_id, count: 0 }
+    tariffUsage[b.tariff_id].count++
+  })
+  const pieData = Object.values(tariffUsage)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5)
+    .map((t, i) => ({
+      name: t.name,
+      value: Math.round((t.count / totalWithTariff) * 100),
+      color: PIE_COLORS[i % PIE_COLORS.length],
+    }))
   if (pieData.length === 0) {
-    pieData.push({ name: 'Tariflar yo\'q', value: 100, color: '#374151' })
+    pieData.push({ name: "Tarif biriktirilmagan", value: 100, color: '#374151' })
   }
 
   return (
