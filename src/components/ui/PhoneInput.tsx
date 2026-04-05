@@ -58,6 +58,7 @@ const PhoneInput = forwardRef<HTMLInputElement, Props>(
             id={inputId}
             type="tel"
             inputMode="numeric"
+            autoComplete="off"
             value={value}
             onChange={handleChange}
             onKeyDown={handleKeyDown}

@@ -241,12 +241,14 @@ export default function ClubsPage() {
           <Input
             label="Klub nomi *"
             placeholder="masalan: Arena Sport"
+            autoComplete="off"
             error={errors.name?.message}
             {...register('name')}
           />
           <Input
             label="Rahbar F.I.O *"
             placeholder="Abdullayev Jamshid"
+            autoComplete="off"
             error={errors.director_name?.message}
             {...register('director_name')}
           />
@@ -254,6 +256,7 @@ export default function ClubsPage() {
             <Input
               label="Klub ID (login) *"
               placeholder="masalan: arena1"
+              autoComplete="off"
               error={errors.login_id?.message}
               disabled={isEdit}
               {...register('login_id')}
@@ -300,7 +303,8 @@ export default function ClubsPage() {
             <div className="relative flex items-center">
               <input
                 type={showPassword ? 'text' : 'password'}
-                placeholder={isEdit ? 'Bo\'sh qoldirsa o\'zgarmaydi' : 'Kirish paroli'}
+                placeholder={isEdit ? "Bo'sh qoldirsa o'zgarmaydi" : 'Kiriting...'}
+                autoComplete="new-password"
                 {...register('password')}
                 className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 pr-10 py-2 text-sm placeholder:text-gray-600 focus:outline-none focus:border-[#00ff88] focus:ring-1 focus:ring-[#00ff88]/40 transition"
               />
