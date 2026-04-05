@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { Session, User } from '@supabase/supabase-js'
-import { supabase } from '@/lib/supabase'
+import { supabase, supabaseAdmin } from '@/lib/supabase'
 import type { Profile, UserRole } from '@/types/database'
 
 const CUSTOM_SESSION_KEY = 'kivo_custom_session'
@@ -121,7 +121,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ isLoading: true })
     try {
       if (role === 'club_director') {
-        const { data: clubs, error } = await (supabase as any)
+        const client = supabaseAdmin ?? (supabase as any)
+        const { data: clubs, error } = await client
           .from('clubs')
           .select('id, name, slug, settings, status')
           .eq('slug', loginId.toLowerCase().trim())
