@@ -22,7 +22,7 @@ export default function AdminDashboardPage() {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Jami klublar" value={clubs.length} sub={`${activeClubs.length} faol`} icon={<Building2 size={18} />} color="indigo" />
+        <StatCard title="Jami klublar" value={clubs.length} sub={`${activeClubs.length} faol`} icon={<Building2 size={18} />} color="brand" />
         <StatCard title="Bu oy qo'shilgan" value={newThisMonth.length} icon={<TrendingUp size={18} />} color="green" />
         <StatCard title="Agentlar" value={agents.length} icon={<Users size={18} />} color="blue" />
         <StatCard title="Tariflar" value={tariffs.length} icon={<Tag size={18} />} color="yellow" />
@@ -32,7 +32,7 @@ export default function AdminDashboardPage() {
       <div className="bg-gray-900 border border-gray-800 rounded-xl">
         <div className="px-5 py-4 border-b border-gray-800 flex items-center justify-between">
           <h2 className="text-white font-semibold">So'nggi klublar</h2>
-          <Link to="/admin/clubs" className="text-sm text-indigo-400 hover:text-indigo-300">Barchasi</Link>
+          <Link to="/admin/clubs" className="text-sm text-[#00ff88] hover:text-[#00ff88]">Barchasi</Link>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -47,7 +47,7 @@ export default function AdminDashboardPage() {
               {clubs.slice(0, 10).map((club) => (
                 <tr key={club.id} className="hover:bg-gray-800/40 transition-colors">
                   <td className="px-5 py-3">
-                    <Link to={`/admin/clubs/${club.id}`} className="text-white font-medium hover:text-indigo-400">{club.name}</Link>
+                    <Link to={`/admin/clubs/${club.id}`} className="text-white font-medium hover:text-[#00ff88]">{club.name}</Link>
                   </td>
                   <td className="px-5 py-3 text-gray-300">{club.director_name ?? '—'}</td>
                   <td className="px-5 py-3 text-gray-400">{club.region_id ?? '—'}</td>

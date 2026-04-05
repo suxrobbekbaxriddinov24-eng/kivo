@@ -145,7 +145,7 @@ export default function InventoryPage() {
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Jami mahsulotlar" value={products.length} icon={<Package size={18} />} color="indigo" />
+        <StatCard title="Jami mahsulotlar" value={products.length} icon={<Package size={18} />} color="brand" />
         <StatCard title="Ombor qiymati" value={formatCurrency(totalValue)} icon={<DollarSign size={18} />} color="green" />
         <StatCard title="Kam qolgan" value={lowStock.length} icon={<AlertTriangle size={18} />} color="yellow" />
         <StatCard title="Tugagan" value={outOfStock.length} icon={<AlertTriangle size={18} />} color="red" />

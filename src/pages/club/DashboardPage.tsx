@@ -45,7 +45,7 @@ export default function ClubDashboardPage() {
           title="Oylik daromad"
           value={formatCurrency(stats?.monthRevenue ?? 0)}
           icon={<ShoppingBag size={18} />}
-          color="indigo"
+          color="brand"
         />
         <StatCard
           title="Jami mijozlar"
@@ -101,7 +101,7 @@ export default function ClubDashboardPage() {
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-white font-semibold">So'nggi mijozlar</h2>
-          <Link to="/customers" className="text-sm text-indigo-400 hover:text-indigo-300">Barchasi</Link>
+          <Link to="/customers" className="text-sm text-[#00ff88] hover:text-[#00ff88]">Barchasi</Link>
         </div>
         <div className="space-y-2">
           {customers.slice(0, 6).map((c) => (
@@ -110,7 +110,7 @@ export default function ClubDashboardPage() {
               to={`/customers/${c.id}`}
               className="flex items-center gap-3 p-3 rounded-lg bg-gray-800/40 hover:bg-gray-800 transition-colors"
             >
-              <div className="w-9 h-9 rounded-full bg-indigo-600/30 flex items-center justify-center text-indigo-300 font-bold text-sm shrink-0">
+              <div className="w-9 h-9 rounded-full bg-[#00ff88]/10 flex items-center justify-center text-[#00ff88] font-bold text-sm shrink-0">
                 {c.first_name[0]?.toUpperCase()}
               </div>
               <div className="flex-1 min-w-0">

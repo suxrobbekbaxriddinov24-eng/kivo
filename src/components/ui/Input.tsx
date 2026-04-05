@@ -28,7 +28,7 @@ const Input = forwardRef<HTMLInputElement, Props>(
             id={inputId}
             {...props}
             className={cn(
-              'w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition disabled:opacity-50 disabled:cursor-not-allowed',
+              'w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm placeholder:text-gray-500 focus:outline-none focus:border-[#00ff88] focus:ring-1 focus:ring-[#00ff88]/40 transition disabled:opacity-50 disabled:cursor-not-allowed',
               icon && 'pl-9',
               suffix && 'pr-12',
               error && 'border-red-500 focus:ring-red-500',

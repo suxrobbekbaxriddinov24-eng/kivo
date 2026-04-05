@@ -61,7 +61,7 @@ export default function DataTable<T>({
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1) }}
             placeholder={searchPlaceholder}
-            className="w-full max-w-sm bg-gray-800 border border-gray-700 rounded-lg pl-9 pr-4 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full max-w-sm bg-gray-800 border border-gray-700 rounded-lg pl-9 pr-4 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:border-[#00ff88] focus:ring-1 focus:ring-[#00ff88]/40"
           />
         </div>
       )}

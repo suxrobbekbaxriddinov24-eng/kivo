@@ -34,7 +34,7 @@ export default function CustomerDetailPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-24">
-        <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-[#00ff88] border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -51,7 +51,7 @@ export default function CustomerDetailPage() {
 
       {/* Header */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 flex items-start gap-5">
-        <div className="w-16 h-16 rounded-full bg-indigo-600/30 flex items-center justify-center text-indigo-300 font-bold text-2xl shrink-0">
+        <div className="w-16 h-16 rounded-full bg-[#00ff88]/10 flex items-center justify-center text-[#00ff88] font-bold text-2xl shrink-0">
           {customer.first_name[0]?.toUpperCase()}
         </div>
         <div className="flex-1">
@@ -74,7 +74,7 @@ export default function CustomerDetailPage() {
 
       {/* Active subscription */}
       {activeSub && (
-        <div className="bg-gray-900 border border-indigo-500/20 rounded-xl p-5">
+        <div className="bg-gray-900 border border-[#00ff88]/20 rounded-xl p-5">
           <h3 className="text-white font-semibold mb-3">Faol obuna</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
             <div>
@@ -147,7 +147,7 @@ export default function CustomerDetailPage() {
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="text-xs text-indigo-400"
+                  className="text-xs text-[#00ff88]"
                 >Kirdi</Button>
               </div>
             ))}

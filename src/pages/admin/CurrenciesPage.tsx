@@ -76,7 +76,7 @@ export default function CurrenciesPage() {
           <p className="text-center text-gray-500 py-10 text-sm">Valyutalar yo'q</p>
         ) : currencies.map((c) => (
           <div key={c.id} className="flex items-center gap-4 px-5 py-4">
-            <div className="w-10 h-10 rounded-lg bg-indigo-600/20 flex items-center justify-center text-indigo-400 font-bold text-sm">
+            <div className="w-10 h-10 rounded-lg bg-[#00ff88]/10 flex items-center justify-center text-[#00ff88] font-bold text-sm">
               {c.symbol}
             </div>
             <div className="flex-1">
@@ -115,7 +115,7 @@ export default function CurrenciesPage() {
           <Input label="To'liq nomi" error={errors.name?.message} {...register('name')} />
           <Input label="Kurs (UZS ga)" type="number" error={errors.rate?.message} {...register('rate')} />
           <label className="flex items-center gap-3 cursor-pointer">
-            <input type="checkbox" className="w-4 h-4 accent-indigo-600" {...register('is_default')} />
+            <input type="checkbox" className="w-4 h-4 accent-[#00ff88]" {...register('is_default')} />
             <span className="text-sm text-gray-300">Asosiy valyuta</span>
           </label>
         </div>

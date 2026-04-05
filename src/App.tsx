@@ -32,6 +32,8 @@ import TariffsPage from '@/pages/admin/TariffsPage'
 import RegionsPage from '@/pages/admin/RegionsPage'
 import CurrenciesPage from '@/pages/admin/CurrenciesPage'
 import AdminSettingsPage from '@/pages/admin/AdminSettingsPage'
+import RolesPage from '@/pages/admin/RolesPage'
+import CategoriesPage from '@/pages/admin/CategoriesPage'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -82,6 +84,8 @@ function AppRoutes() {
         <Route path="tariffs" element={<TariffsPage />} />
         <Route path="regions" element={<RegionsPage />} />
         <Route path="currencies" element={<CurrenciesPage />} />
+        <Route path="roles" element={<RolesPage />} />
+        <Route path="categories" element={<CategoriesPage />} />
         <Route path="settings" element={<AdminSettingsPage />} />
       </Route>
 

@@ -65,7 +65,7 @@ export default function FinancePage() {
           <button
             key={p.value}
             onClick={() => setPeriod(p.value as FinancePeriod)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${period === p.value ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}`}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${period === p.value ? 'bg-[#00ff88] text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}`}
           >
             {p.label}
           </button>
@@ -75,7 +75,7 @@ export default function FinancePage() {
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="Jami daromad" value={formatCurrency(totalRevenue)} icon={<TrendingUp size={18} />} color="green" />
-        <StatCard title="Foyda" value={formatCurrency(profit)} icon={<Tag size={18} />} color="indigo" />
+        <StatCard title="Foyda" value={formatCurrency(profit)} icon={<Tag size={18} />} color="brand" />
         <StatCard title="Abonement" value={formatCurrency(subRevenue)} sub={`${sales.filter(s => s.type === 'subscription').length} ta`} icon={<Users size={18} />} color="blue" />
         <StatCard title="Bar / Kassa" value={formatCurrency(barRevenue)} sub={`${sales.filter(s => s.type === 'bar').length} ta`} icon={<ShoppingBag size={18} />} color="yellow" />
       </div>
@@ -147,7 +147,7 @@ export default function FinancePage() {
                 <div className="flex-1">
                   <p className="text-sm text-white font-medium">{c.name}</p>
                 </div>
-                <p className="text-sm font-semibold text-indigo-400">{formatCurrency(c.total)}</p>
+                <p className="text-sm font-semibold text-[#00ff88]">{formatCurrency(c.total)}</p>
               </div>
             ))}
           </div>
@@ -182,7 +182,7 @@ export default function FinancePage() {
                   <tr key={s.id} className="hover:bg-gray-800/40 transition-colors">
                     <td className="px-5 py-3 text-gray-400">{formatDateTime(s.created_at)}</td>
                     <td className="px-5 py-3">
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${s.type === 'subscription' ? 'bg-indigo-500/15 text-indigo-400' : 'bg-green-500/15 text-green-400'}`}>
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${s.type === 'subscription' ? 'bg-[#00ff88]/10 text-[#00ff88]' : 'bg-green-500/15 text-green-400'}`}>
                         {s.type === 'subscription' ? 'Abonement' : 'Bar'}
                       </span>
                     </td>

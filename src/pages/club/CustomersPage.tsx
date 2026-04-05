@@ -144,7 +144,7 @@ export default function CustomersPage() {
       header: 'Mijoz',
       accessor: (c) => (
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-indigo-600/30 flex items-center justify-center text-indigo-300 text-xs font-bold shrink-0">
+          <div className="w-8 h-8 rounded-full bg-[#00ff88]/10 flex items-center justify-center text-[#00ff88] text-xs font-bold shrink-0">
             {c.first_name[0]?.toUpperCase()}
           </div>
           <div>
@@ -256,7 +256,7 @@ export default function CustomersPage() {
           <div className="flex flex-col gap-1">
             <label className="text-sm text-gray-300 font-medium">Izoh</label>
             <textarea
-              className="bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+              className="bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#00ff88] resize-none"
               rows={2}
               {...register('notes')}
             />

@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+@theme {
+  --color-brand: #00ff88;
+  --color-brand-dark: #00cc6d;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -14,7 +19,7 @@ html, body, #root {
 body {
   background-color: #030712;
   color: #f9fafb;
-  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

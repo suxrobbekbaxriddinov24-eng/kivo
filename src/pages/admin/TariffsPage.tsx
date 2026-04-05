@@ -97,12 +97,12 @@ export default function TariffsPage() {
                 <h3 className="text-white font-semibold text-lg">{t.name}</h3>
                 <StatusBadge status={t.status} size="sm" />
               </div>
-              <p className="text-3xl font-bold text-indigo-400">{formatCurrency(t.price)}<span className="text-sm text-gray-400 font-normal"> / {t.period_days} kun</span></p>
+              <p className="text-3xl font-bold text-[#00ff88]">{formatCurrency(t.price)}<span className="text-sm text-gray-400 font-normal"> / {t.period_days} kun</span></p>
               {t.features.length > 0 && (
                 <ul className="space-y-1.5">
                   {t.features.map((f, i) => (
                     <li key={i} className="flex items-center gap-2 text-sm text-gray-300">
-                      <Check size={14} className="text-indigo-400 shrink-0" />{f}
+                      <Check size={14} className="text-[#00ff88] shrink-0" />{f}
                     </li>
                   ))}
                 </ul>
@@ -133,7 +133,7 @@ export default function TariffsPage() {
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-sm text-gray-300 font-medium">Xususiyatlar (vergul bilan)</label>
-            <textarea className="bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none" rows={3} placeholder="CRM, Hisobotlar, Filiallar..." {...register('features')} />
+            <textarea className="bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00ff88] resize-none" rows={3} placeholder="CRM, Hisobotlar, Filiallar..." {...register('features')} />
           </div>
           <Select label="Holat" options={[{ value: 'active', label: 'Faol' }, { value: 'inactive', label: 'Nofaol' }]} {...register('status')} />
         </div>

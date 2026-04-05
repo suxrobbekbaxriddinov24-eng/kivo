@@ -133,7 +133,7 @@ export default function PlansPage() {
                 </div>
                 <StatusBadge status={plan.status} size="sm" />
               </div>
-              <p className="text-2xl font-bold text-indigo-400">{formatCurrency(plan.price)}</p>
+              <p className="text-2xl font-bold text-[#00ff88]">{formatCurrency(plan.price)}</p>
               <div className="flex gap-3 text-xs text-gray-400">
                 <span className="flex items-center gap-1">
                   <Clock size={12} />
@@ -193,7 +193,7 @@ export default function PlansPage() {
             {...register('category')}
           />
           <label className="flex items-center gap-3 cursor-pointer">
-            <input type="checkbox" className="w-4 h-4 accent-indigo-600" {...register('time_restricted')} />
+            <input type="checkbox" className="w-4 h-4 accent-[#00ff88]" {...register('time_restricted')} />
             <span className="text-sm text-gray-300">Vaqt chegarasi</span>
           </label>
           {timeRestricted && (

@@ -5,21 +5,22 @@ interface Props {
   value: string | number
   sub?: string
   icon?: React.ReactNode
-  color?: 'indigo' | 'green' | 'yellow' | 'red' | 'blue'
+  color?: 'brand' | 'indigo' | 'green' | 'yellow' | 'red' | 'blue'
   trend?: { value: number; label: string }
 }
 
 const colors = {
-  indigo: 'bg-indigo-500/10 text-indigo-400',
-  green: 'bg-green-500/10 text-green-400',
+  brand:  'bg-[#00ff88]/10 text-[#00ff88]',
+  indigo: 'bg-[#00ff88]/10 text-[#00ff88]',
+  green:  'bg-green-500/10 text-green-400',
   yellow: 'bg-yellow-500/10 text-yellow-400',
-  red: 'bg-red-500/10 text-red-400',
-  blue: 'bg-blue-500/10 text-blue-400',
+  red:    'bg-red-500/10 text-red-400',
+  blue:   'bg-blue-500/10 text-blue-400',
 }
 
-export default function StatCard({ title, value, sub, icon, color = 'indigo', trend }: Props) {
+export default function StatCard({ title, value, sub, icon, color = 'brand', trend }: Props) {
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 flex flex-col gap-3">
+    <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 flex flex-col gap-3 hover:border-gray-700 transition-colors">
       <div className="flex items-start justify-between">
         <p className="text-sm text-gray-400">{title}</p>
         {icon && (

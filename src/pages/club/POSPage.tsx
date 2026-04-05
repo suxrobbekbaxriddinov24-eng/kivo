@@ -98,7 +98,7 @@ export default function POSPage() {
         <div className="flex gap-2 flex-wrap">
           <button
             onClick={() => setCategoryFilter(null)}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${!categoryFilter ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}`}
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${!categoryFilter ? 'bg-[#00ff88] text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}`}
           >
             Barchasi
           </button>
@@ -106,7 +106,7 @@ export default function POSPage() {
             <button
               key={cat.id}
               onClick={() => setCategoryFilter(cat.id)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${categoryFilter === cat.id ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}`}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${categoryFilter === cat.id ? 'bg-[#00ff88] text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}`}
             >
               {cat.name}
             </button>
@@ -131,14 +131,14 @@ export default function POSPage() {
                   <button
                     key={p.id}
                     onClick={() => addToCart(p)}
-                    className={`p-4 rounded-xl border text-left transition-all ${cartItem ? 'border-indigo-500 bg-indigo-600/10' : 'border-gray-800 bg-gray-900 hover:border-gray-600'}`}
+                    className={`p-4 rounded-xl border text-left transition-all ${cartItem ? 'border-[#00ff88] bg-[#00ff88]/10' : 'border-gray-800 bg-gray-900 hover:border-gray-600'}`}
                   >
                     <p className="text-white font-medium text-sm truncate">{p.name}</p>
-                    <p className="text-indigo-400 font-semibold mt-1">{formatCurrency(p.sell_price)}</p>
+                    <p className="text-[#00ff88] font-semibold mt-1">{formatCurrency(p.sell_price)}</p>
                     <div className="flex items-center justify-between mt-2">
                       <p className="text-xs text-gray-500">{p.quantity} ta qoldi</p>
                       {cartItem && (
-                        <span className="w-5 h-5 rounded-full bg-indigo-600 text-white text-xs flex items-center justify-center font-bold">
+                        <span className="w-5 h-5 rounded-full bg-[#00ff88] text-white text-xs flex items-center justify-center font-bold">
                           {cartItem.qty}
                         </span>
                       )}
@@ -157,7 +157,7 @@ export default function POSPage() {
           <ShoppingCart size={18} className="text-gray-400" />
           <span className="text-white font-semibold">Savatcha</span>
           {cart.length > 0 && (
-            <span className="ml-auto text-xs bg-indigo-600 text-white rounded-full w-5 h-5 flex items-center justify-center font-bold">
+            <span className="ml-auto text-xs bg-[#00ff88] text-white rounded-full w-5 h-5 flex items-center justify-center font-bold">
               {cart.reduce((s, i) => s + i.qty, 0)}
             </span>
           )}
@@ -185,7 +185,7 @@ export default function POSPage() {
                       <Plus size={12} />
                     </button>
                   </div>
-                  <p className="text-indigo-400 text-sm font-semibold">{formatCurrency(item.product.sell_price * item.qty)}</p>
+                  <p className="text-[#00ff88] text-sm font-semibold">{formatCurrency(item.product.sell_price * item.qty)}</p>
                 </div>
               </div>
             ))
@@ -239,7 +239,7 @@ export default function POSPage() {
               max={100}
               value={discountPct}
               onChange={(e) => setDiscountPct(Number(e.target.value))}
-              className="bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00ff88]"
             />
           </div>
           <div className="bg-gray-800 rounded-lg p-3 text-sm space-y-1">
