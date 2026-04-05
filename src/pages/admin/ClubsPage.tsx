@@ -86,7 +86,16 @@ export default function ClubsPage() {
       }
 
       if (editClub) {
-        return clubsService.update(editClub.id, payload)
+        const updated = await clubsService.update(editClub.id, payload)
+        // Update password if provided
+        if (data.password) {
+          const { data: users } = await (supabase as any).auth.admin.listUsers()
+          const user = users?.users?.find((u: any) => u.email === `${editClub.slug}@kivo.uz`)
+          if (user) {
+            await (supabase as any).auth.admin.updateUserById(user.id, { password: data.password })
+          }
+        }
+        return updated
       }
 
       // Create club
@@ -269,15 +278,13 @@ export default function ClubsPage() {
               )}
             />
           </div>
-          {!isEdit && (
-            <Input
-              label="Admin Paroli *"
-              type="password"
-              placeholder="Kirish paroli"
-              error={errors.password?.message}
-              {...register('password')}
-            />
-          )}
+          <Input
+            label={isEdit ? 'Yangi parol (o\'zgartirish uchun)' : 'Admin Paroli *'}
+            type="password"
+            placeholder={isEdit ? 'Yangi parol kiriting' : 'Kirish paroli'}
+            error={errors.password?.message}
+            {...register('password')}
+          />
           <div className="grid grid-cols-2 gap-3">
             <Select
               label="Viloyat"
