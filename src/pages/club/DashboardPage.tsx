@@ -4,7 +4,7 @@ import { salesService } from '@/services/sales.service'
 import { customersService } from '@/services/customers.service'
 import StatCard from '@/components/ui/StatCard'
 import { formatCurrency, formatDateTime, daysUntil } from '@/lib/utils'
-import { Users, TrendingUp, CalendarCheck, ShoppingBag, AlertTriangle } from 'lucide-react'
+import { Users, TrendingUp, CalendarCheck, ShoppingBag, AlertTriangle, UserPlus, ShoppingCart } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import StatusBadge from '@/components/ui/StatusBadge'
 
@@ -30,8 +30,16 @@ export default function ClubDashboardPage() {
     return days !== null && days >= 0 && days <= 7
   })
 
+  const firstName = profile?.full_name?.split(' ')[0] ?? 'Foydalanuvchi'
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
+      {/* Greeting */}
+      <div>
+        <h1 className="text-xl font-bold text-white">Xush kelibsiz, {firstName}!</h1>
+        <p className="text-sm text-gray-500 mt-0.5">Bugungi yangiliklar bilan tanishing.</p>
+      </div>
+
       {/* Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
@@ -59,6 +67,28 @@ export default function ClubDashboardPage() {
           icon={<CalendarCheck size={18} />}
           color="yellow"
         />
+      </div>
+
+      {/* Quick Action Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <Link to="/customers" className="bg-gray-900 border border-gray-800 hover:border-[#00ff88]/30 rounded-xl p-5 flex items-center gap-4 transition-all group">
+          <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform" style={{ background: 'rgba(0,255,136,0.1)' }}>
+            <UserPlus size={20} style={{ color: '#00ff88' }} />
+          </div>
+          <div>
+            <p className="text-white font-semibold text-sm">Mijozni ro'yxatga olish</p>
+            <p className="text-gray-500 text-xs mt-0.5">Yangi mijoz qo'shish va ro'yxatdan o'tkazish</p>
+          </div>
+        </Link>
+        <Link to="/pos" className="bg-gray-900 border border-gray-800 hover:border-[#00ff88]/30 rounded-xl p-5 flex items-center gap-4 transition-all group">
+          <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform" style={{ background: 'rgba(0,255,136,0.1)' }}>
+            <ShoppingCart size={20} style={{ color: '#00ff88' }} />
+          </div>
+          <div>
+            <p className="text-white font-semibold text-sm">Tezkor savdo</p>
+            <p className="text-gray-500 text-xs mt-0.5">Bar mahsulotlarini sotish va hisoblash</p>
+          </div>
+        </Link>
       </div>
 
       {/* Expiring subscriptions */}
