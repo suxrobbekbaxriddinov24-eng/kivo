@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { clubsService } from '@/services/clubs.service'
 import { adminService } from '@/services/admin.service'
-import { supabase } from '@/lib/supabase'
+import { supabase, supabaseAdmin } from '@/lib/supabase'
 import { toast } from '@/stores/uiStore'
 import { formatDate } from '@/lib/utils'
 import { useForm, Controller } from 'react-hook-form'
@@ -99,64 +99,54 @@ export default function ClubsPage() {
         settings: { currency: 'UZS', timezone: 'Asia/Tashkent', discounts: { m1: 0, m3: 10, m6: 15, m12: 25 }, locker_count: 50, director_password: data.password || null },
       }
 
+      const upsertAuthUser = async (email: string, password: string, clubId: string) => {
+        if (!supabaseAdmin) throw new Error('Service role key topilmadi. .env.local faylini tekshiring.')
+        // Find existing user first
+        const { data: list } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 })
+        const existing = list?.users?.find((u: any) => u.email === email)
+        let userId: string
+        if (existing) {
+          // Update password of existing user
+          const { error } = await supabaseAdmin.auth.admin.updateUserById(existing.id, { password })
+          if (error) throw new Error(`Parol yangilashda xatolik: ${error.message}`)
+          userId = existing.id
+        } else {
+          // Create new user
+          const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
+            email,
+            password,
+            email_confirm: true,
+            user_metadata: { role: 'club_director' },
+          })
+          if (error) throw new Error(`Login yaratishda xatolik: ${error.message}`)
+          userId = created.user.id
+        }
+        await supabase.from('profiles').upsert({
+          id: userId,
+          role: 'club_director',
+          club_id: clubId,
+          full_name: data.director_name,
+          phone: data.phone || null,
+          status: 'active',
+        } as any)
+        return userId
+      }
+
       if (editClub) {
         if (data.password) {
           payload.settings = { ...editClub.settings, director_password: data.password } as any
         }
         const updated = await clubsService.update(editClub.id, payload)
-        // Try update existing auth user password; if not found, create one
         if (data.password) {
-          const email = `${editClub.slug}@kivo.uz`
-          const { data: authData, error: authError } = await supabase.auth.signUp({
-            email,
-            password: data.password,
-            options: { data: { full_name: data.director_name, role: 'club_director' } },
-          })
-          // If already exists, signUp returns user with identities=[] — that's fine
-          if (authError && !authError.message.toLowerCase().includes('already registered')) {
-            // Non-fatal: club is already saved, just warn
-            toast.error(`Klub saqlandi, lekin login yaratishda xatolik: ${authError.message}`)
-          } else if (authData?.user?.id) {
-            await (supabase as any).from('profiles').upsert({
-              id: authData.user.id,
-              role: 'club_director',
-              club_id: editClub.id,
-              full_name: data.director_name,
-              phone: data.phone || null,
-              status: 'active',
-            })
-          }
+          await upsertAuthUser(`${editClub.slug}@kivo.uz`, data.password, editClub.id)
         }
         return updated
       }
 
-      // 1. Create auth user FIRST — if this fails, club won't be created
-      let authUserId: string | null = null
-      if (data.password) {
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-          email: `${data.login_id}@kivo.uz`,
-          password: data.password,
-          options: { data: { full_name: data.director_name, role: 'club_director' } },
-        })
-        if (authError && !authError.message.toLowerCase().includes('already registered')) {
-          throw new Error(`Login yaratishda xatolik: ${authError.message}`)
-        }
-        authUserId = authData?.user?.id ?? null
-      }
-
-      // 2. Create club only after auth succeeds
+      // 1. Create auth user FIRST
       const club = await clubsService.create(payload)
-
-      // 3. Link profile
-      if (authUserId) {
-        await (supabase as any).from('profiles').upsert({
-          id: authUserId,
-          role: 'club_director',
-          club_id: club.id,
-          full_name: data.director_name,
-          phone: data.phone || null,
-          status: 'active',
-        })
+      if (data.password) {
+        await upsertAuthUser(`${data.login_id}@kivo.uz`, data.password, club.id)
       }
       return club
     },
