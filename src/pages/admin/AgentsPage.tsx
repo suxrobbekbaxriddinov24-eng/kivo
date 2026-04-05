@@ -80,12 +80,11 @@ export default function AgentsPage() {
   }
 
   const openEdit = (a: Agent) => {
-    const s = (a.settings ?? {}) as Record<string, unknown>
     setEditAgent(a)
     setValue('full_name',   a.full_name)
     setValue('phone',       a.phone ?? '')
-    setValue('club_id',     (s.club_id as string) ?? a.club_id ?? '')
-    setValue('role',        (s.role as string) ?? a.role ?? '')
+    setValue('club_id',     a.club_id ?? '')
+    setValue('role',        a.role ?? '')
     setValue('username',    a.username)
     setValue('password',    '')
     setValue('schedule',    a.schedule ?? '')
@@ -110,10 +109,7 @@ export default function AgentsPage() {
         region_id:   data.region_id || null,
         district_id: data.district_id || null,
         user_id:     null,
-        settings: {
-          ...existingSettings,
-          password: data.password || existingSettings.password || null,
-        },
+        settings:    { ...existingSettings, password: data.password || existingSettings.password || null },
       }
       return editAgent
         ? adminService.updateAgent(editAgent.id, payload)
@@ -156,14 +152,11 @@ export default function AgentsPage() {
     {
       header: 'Klub / Rol',
       accessor: (a) => {
-        const s = (a.settings ?? {}) as Record<string, unknown>
-        const clubId = (s.club_id as string) ?? a.club_id
-        const role   = (s.role   as string) ?? a.role
-        const club   = clubs.find((c) => c.id === clubId)
+        const club = clubs.find((c) => c.id === a.club_id)
         return (
           <div>
             <p className="text-gray-300 text-sm">{club?.name ?? '—'}</p>
-            {role && <p className="text-xs text-gray-500">{AGENT_ROLES.find((r) => r.value === role)?.label ?? role}</p>}
+            {a.role && <p className="text-xs text-gray-500">{AGENT_ROLES.find((r) => r.value === a.role)?.label ?? a.role}</p>}
           </div>
         )
       },

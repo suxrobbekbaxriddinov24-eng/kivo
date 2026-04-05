@@ -91,29 +91,28 @@ export const adminService = {
     return data ?? []
   },
   async createAgent(payload: Omit<Agent, 'id' | 'created_at' | 'updated_at'>): Promise<Agent> {
-    // Only send columns that exist in the DB schema
     const row: any = {
       user_id:     payload.user_id ?? null,
       full_name:   payload.full_name,
       phone:       payload.phone ?? null,
       username:    payload.username,
+      club_id:     payload.club_id ?? null,
+      role:        payload.role ?? null,
       schedule:    payload.schedule ?? null,
       status:      payload.status,
       region_id:   payload.region_id ?? null,
       district_id: payload.district_id ?? null,
+      settings:    payload.settings ?? {},
     }
     const { data, error } = await db.from('agents').insert(row).select().single()
     if (error) throw error
-    // Return with extra fields merged in so UI still reflects what was typed
-    return { ...data, club_id: payload.club_id ?? null, role: payload.role ?? null, settings: null }
+    return data
   },
   async updateAgent(id: string, payload: Partial<Agent>): Promise<Agent> {
-    // Strip columns that don't exist in the DB
-    const { club_id, role, settings, ...rest } = payload as any
-    const row: any = { ...rest, updated_at: new Date().toISOString() }
-    const { data, error } = await db.from('agents').update(row).eq('id', id).select().single()
+    const { data, error } = await db
+      .from('agents').update({ ...payload, updated_at: new Date().toISOString() }).eq('id', id).select().single()
     if (error) throw error
-    return { ...data, club_id: club_id ?? null, role: role ?? null, settings: null }
+    return data
   },
   async deleteAgent(id: string): Promise<void> {
     const { error } = await db.from('agents').delete().eq('id', id)
