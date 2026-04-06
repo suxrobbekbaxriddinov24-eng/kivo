@@ -186,12 +186,6 @@ export default function PlansPage() {
               {...register('duration_value')}
             />
           </div>
-          <Select
-            label="Kategoriya"
-            options={PLAN_CATEGORY_OPTIONS as unknown as {value:string;label:string}[]}
-            placeholder="Tanlang"
-            {...register('category')}
-          />
           <label className="flex items-center gap-3 cursor-pointer">
             <input type="checkbox" className="w-4 h-4 accent-[#00ff88]" {...register('time_restricted')} />
             <span className="text-sm text-gray-300">Vaqt chegarasi</span>
