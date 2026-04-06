@@ -211,8 +211,31 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         set({ profile: buildFakeProfile(cs) })
 
       } else {
-        // Staff: not yet implemented
-        throw new Error('Xodim login hali ishga tushirilmagan')
+        // Staff: authenticate via agents table (username + settings.password)
+        const client = supabaseAdmin ?? (supabase as any)
+        const { data: agent, error: agentError } = await client
+          .from('agents')
+          .select('*')
+          .eq('username', loginId.toLowerCase().trim())
+          .single()
+
+        if (agentError || !agent) throw new Error("Login yoki parol noto'g'ri")
+        if (agent.status !== 'active') throw new Error('Bu xodim bloklangan yoki nofaol')
+
+        const storedPwd = agent.settings?.password
+        if (!storedPwd) throw new Error("Parol o'rnatilmagan. Admin bilan bog'laning")
+        if (storedPwd !== password) throw new Error("Login yoki parol noto'g'ri")
+
+        // Build a fake profile for the staff member
+        const cs: CustomSession = {
+          clubId: agent.club_id ?? '',
+          branchId: null,
+          fullName: agent.full_name,
+          role: 'staff',
+          loginId: agent.username,
+        }
+        localStorage.setItem(CUSTOM_SESSION_KEY, JSON.stringify(cs))
+        set({ profile: buildFakeProfile(cs) })
       }
     } finally {
       set({ isLoading: false })
