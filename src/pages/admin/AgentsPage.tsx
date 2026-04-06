@@ -53,6 +53,7 @@ export default function AgentsPage() {
   const [editAgent, setEditAgent] = useState<Agent | null>(null)
   const [deleteId, setDeleteId]   = useState<string | null>(null)
   const [showPwd, setShowPwd]     = useState(false)
+  const [currentPwd, setCurrentPwd] = useState<string | null>(null)
 
   const { data: agents  = [], isLoading } = useQuery({ queryKey: ['agents'],  queryFn: adminService.listAgents })
   const { data: regions = [] }            = useQuery({ queryKey: ['regions'], queryFn: adminService.listRegions })
@@ -70,27 +71,34 @@ export default function AgentsPage() {
     enabled: !!selectedRegion,
   })
 
-  const closeModal = () => { setOpen(false); setEditAgent(null); reset(); setShowPwd(false) }
+  const closeModal = () => { setOpen(false); setEditAgent(null); reset(); setShowPwd(false); setCurrentPwd(null) }
 
   const openAdd = () => {
     reset({ full_name: '', phone: '', club_id: '', role: '', username: '', password: '', schedule: '', status: 'active', region_id: '', district_id: '' })
     setEditAgent(null)
+    setCurrentPwd(null)
     setShowPwd(false)
     setOpen(true)
   }
 
   const openEdit = (a: Agent) => {
+    console.log('openEdit settings:', a.settings)
+    const pwd = (a.settings?.password as string) || null
+    console.log('pwd extracted:', pwd)
     setEditAgent(a)
-    setValue('full_name',   a.full_name)
-    setValue('phone',       a.phone ?? '')
-    setValue('club_id',     a.club_id ?? '')
-    setValue('role',        a.role ?? '')
-    setValue('username',    a.username)
-    setValue('password',    '')
-    setValue('schedule',    a.schedule ?? '')
-    setValue('status',      a.status)
-    setValue('region_id',   a.region_id ?? '')
-    setValue('district_id', a.district_id ?? '')
+    setCurrentPwd(pwd)
+    reset({
+      full_name:   a.full_name,
+      phone:       a.phone ?? '',
+      club_id:     a.club_id ?? '',
+      role:        a.role ?? '',
+      username:    a.username,
+      password:    pwd ?? '',
+      schedule:    a.schedule ?? '',
+      status:      a.status,
+      region_id:   a.region_id ?? '',
+      district_id: a.district_id ?? '',
+    })
     setShowPwd(false)
     setOpen(true)
   }
@@ -253,13 +261,18 @@ export default function AgentsPage() {
             />
             {/* Password */}
             <div className="flex flex-col gap-1">
-              <label className="text-sm text-gray-300 font-medium">
-                {isEdit ? "Yangi parol (ixtiyoriy)" : 'Parol *'}
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="text-sm text-gray-300 font-medium">
+                  {isEdit ? 'Parol' : 'Parol *'}
+                </label>
+                {isEdit && currentPwd && (
+                  <span className="text-xs text-[#00ff88]/70">Joriy parol saqlangan</span>
+                )}
+              </div>
               <div className="relative flex items-center">
                 <input
                   type={showPwd ? 'text' : 'password'}
-                  placeholder={isEdit ? "O'zgartirmaslik uchun bo'sh qoldiring" : 'aziz123'}
+                  placeholder={isEdit ? "Bo'sh qoldirsa — o'zgarmaydi" : 'aziz123'}
                   autoComplete="new-password"
                   {...register('password')}
                   className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 pr-10 py-2 text-sm placeholder:text-gray-600 focus:outline-none focus:border-[#00ff88] focus:ring-1 focus:ring-[#00ff88]/40 transition"
