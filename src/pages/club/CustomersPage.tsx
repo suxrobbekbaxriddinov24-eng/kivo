@@ -13,9 +13,10 @@ import type { Column } from '@/components/ui/DataTable'
 import Modal from '@/components/ui/Modal'
 import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
+import PhoneInput from '@/components/ui/PhoneInput'
 import StatusBadge from '@/components/ui/StatusBadge'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import type { Customer } from '@/types/database'
@@ -90,7 +91,7 @@ export default function CustomersPage() {
   })
   const clubDiscounts = (club?.settings?.discounts as typeof DEFAULT_DISCOUNTS) ?? DEFAULT_DISCOUNTS
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, reset, control, formState: { errors } } = useForm<FormData>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(schema) as any,
   })
@@ -296,10 +297,21 @@ export default function CustomersPage() {
             <Input label="Ism *" error={errors.first_name?.message} {...register('first_name')} />
             <Input label="Familiya" error={errors.last_name?.message} {...register('last_name')} />
           </div>
-          <Input label="Telefon" placeholder="+998 90 123-45-67" {...register('phone')} />
+          <Controller
+            name="phone"
+            control={control}
+            render={({ field }) => (
+              <PhoneInput
+                label="Telefon"
+                value={field.value ?? ''}
+                onChange={field.onChange}
+                error={errors.phone?.message}
+              />
+            )}
+          />
           <div className="grid grid-cols-2 gap-3">
             <Select label="Jinsi" options={GENDER_OPTIONS as unknown as {value:string;label:string}[]} placeholder="Tanlang" {...register('gender')} />
-            <Input label="Tug'ilgan sana" type="date" {...register('birth_date')} />
+            <Input label="Qo'shilgan sana" type="date" {...register('birth_date')} />
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-sm text-gray-300 font-medium">Izoh</label>
