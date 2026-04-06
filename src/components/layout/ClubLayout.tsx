@@ -1,8 +1,8 @@
-import { Outlet, useLocation, Link } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import {
   LayoutDashboard, Users, ShoppingCart, Package,
-  BarChart2, BookOpen, Settings, Bell, UserPlus,
+  BarChart2, BookOpen, Settings, Bell,
 } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { useState, useEffect } from 'react'
@@ -19,8 +19,7 @@ const NAV = [
 
 const PAGE_META: Record<string, { title: string; subtitle: string; action?: React.ReactNode }> = {
   '/dashboard':  { title: 'Tizim holati',          subtitle: 'Bugungi yangiliklar va hisobotlar' },
-  '/customers':  { title: "Mijozlar Ro'yxati",     subtitle: "Barcha ro'yxatdan o'tgan mijozlarni boshqarish",
-    action: <Link to="/customers" state={{ openAdd: true }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-950 transition-all" style={{ background: 'linear-gradient(135deg,#00ff88,#00cc6d)' }}><UserPlus size={13} /> Yangi mijoz qo'shish</Link> },
+  '/customers':  { title: "Mijozlar Ro'yxati",     subtitle: "Barcha ro'yxatdan o'tgan mijozlarni boshqarish" },
   '/plans':      { title: 'Xizmatlar va Tariflar', subtitle: "Klubingiz taklif qiladigan barcha xizmat turlarini boshqaring" },
   '/pos':        { title: 'Savdo (Bar)',            subtitle: new Date().toLocaleDateString('uz-UZ', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }) },
   '/inventory':  { title: 'Ombor (Mahsulotlar)',   subtitle: 'Barcha mahsulotlar va ombor zaxiralarini boshqarish' },
