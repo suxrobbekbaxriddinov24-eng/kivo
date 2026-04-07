@@ -8,7 +8,7 @@ export const productsService = {
   async list(clubId: string): Promise<Product[]> {
     const { data, error } = await dbAdmin
       .from('products')
-      .select('*, category:product_categories(id, name)')
+      .select('*, category:product_categories(id, name, icon)')
       .eq('club_id', clubId)
       .order('name')
     if (error) throw error

@@ -141,17 +141,26 @@ export default function POSPage() {
                   <button
                     key={p.id}
                     onClick={() => addToCart(p)}
-                    className={`p-4 rounded-xl border text-left transition-all ${cartItem ? 'border-[#00ff88] bg-[#00ff88]/10' : 'border-gray-800 bg-gray-900 hover:border-gray-600'}`}
+                    className={`rounded-xl border text-left transition-all overflow-hidden flex flex-col ${cartItem ? 'border-[#00ff88] bg-[#00ff88]/10' : 'border-gray-800 bg-gray-900 hover:border-gray-600'}`}
                   >
-                    <p className="text-white font-medium text-sm truncate">{p.name}</p>
-                    <p className="text-[#00ff88] font-semibold mt-1">{formatCurrency(p.sell_price)}</p>
-                    <div className="flex items-center justify-between mt-2">
-                      <p className="text-xs text-gray-500">{p.quantity} ta qoldi</p>
-                      {cartItem && (
-                        <span className="w-5 h-5 rounded-full bg-[#00ff88] text-white text-xs flex items-center justify-center font-bold">
-                          {cartItem.qty}
-                        </span>
-                      )}
+                    {p.image_url ? (
+                      <img src={p.image_url} alt={p.name} className="w-full h-28 object-cover" />
+                    ) : (
+                      <div className="w-full h-28 bg-gray-800 flex items-center justify-center">
+                        <span className="text-3xl">{p.category?.icon ?? '📦'}</span>
+                      </div>
+                    )}
+                    <div className="p-3">
+                      <p className="text-white font-medium text-sm truncate">{p.name}</p>
+                      <p className="text-[#00ff88] font-semibold mt-0.5">{formatCurrency(p.sell_price)}</p>
+                      <div className="flex items-center justify-between mt-1.5">
+                        <p className="text-xs text-gray-500">{p.quantity} ta qoldi</p>
+                        {cartItem && (
+                          <span className="w-5 h-5 rounded-full bg-[#00ff88] text-white text-xs flex items-center justify-center font-bold">
+                            {cartItem.qty}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </button>
                 )

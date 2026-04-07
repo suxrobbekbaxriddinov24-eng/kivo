@@ -120,7 +120,9 @@ export default function InventoryPage() {
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    setPhotoPreview(URL.createObjectURL(file))
+    const reader = new FileReader()
+    reader.onload = (ev) => setPhotoPreview(ev.target?.result as string)
+    reader.readAsDataURL(file)
   }
 
   const saveMutation = useMutation({
@@ -134,7 +136,7 @@ export default function InventoryPage() {
         quantity:        data.quantity,
         low_stock_alert: data.low_stock_alert,
         barcode:         data.barcode || null,
-        image_url:       null,
+        image_url:       photoPreview,
         status:          'active' as const,
       }
       return editProduct
