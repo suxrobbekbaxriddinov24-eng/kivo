@@ -49,12 +49,12 @@ export default function CameraModal({ open, onCapture, onClose }: Props) {
     if (!videoRef.current || !canvasRef.current) return
     const v = videoRef.current
     const c = canvasRef.current
-    const MAX = 400
+    const MAX = 200
     const ratio = Math.min(MAX / v.videoWidth, MAX / v.videoHeight, 1)
     c.width  = Math.round(v.videoWidth * ratio)
     c.height = Math.round(v.videoHeight * ratio)
     c.getContext('2d')!.drawImage(v, 0, 0, c.width, c.height)
-    const dataUrl = c.toDataURL('image/jpeg', 0.7)
+    const dataUrl = c.toDataURL('image/jpeg', 0.6)
     setCaptured(dataUrl)
     stopCamera()
   }

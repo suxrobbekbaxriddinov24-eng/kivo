@@ -128,12 +128,12 @@ export default function InventoryPage() {
     const objectUrl = URL.createObjectURL(file)
     img.onload = () => {
       const canvas = document.createElement('canvas')
-      const MAX = 400
+      const MAX = 200
       const ratio = Math.min(MAX / img.width, MAX / img.height, 1)
       canvas.width = Math.round(img.width * ratio)
       canvas.height = Math.round(img.height * ratio)
       canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height)
-      setPhotoPreview(canvas.toDataURL('image/jpeg', 0.7))
+      setPhotoPreview(canvas.toDataURL('image/jpeg', 0.6))
       URL.revokeObjectURL(objectUrl)
     }
     img.src = objectUrl
