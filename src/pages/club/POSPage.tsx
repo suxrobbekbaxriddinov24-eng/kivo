@@ -192,8 +192,16 @@ export default function POSPage() {
               <input
                 type="text"
                 value={customerPhone}
-                onChange={(e) => setCustomerPhone(e.target.value)}
-                placeholder="99-123-45-67"
+                onChange={(e) => {
+                  const digits = e.target.value.replace(/\D/g, '').slice(0, 9)
+                  let formatted = digits
+                  if (digits.length > 2) formatted = digits.slice(0,2) + '-' + digits.slice(2)
+                  if (digits.length > 5) formatted = digits.slice(0,2) + '-' + digits.slice(2,5) + '-' + digits.slice(5)
+                  if (digits.length > 7) formatted = digits.slice(0,2) + '-' + digits.slice(2,5) + '-' + digits.slice(5,7) + '-' + digits.slice(7)
+                  setCustomerPhone(formatted)
+                }}
+                placeholder="90-123-12-22"
+                maxLength={11}
                 className="flex-1 bg-transparent text-white text-sm placeholder:text-gray-600 focus:outline-none"
               />
             </div>
