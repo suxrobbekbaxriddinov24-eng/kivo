@@ -130,12 +130,27 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
         if (signInData?.session) {
           // Real auth session — fetch profile
+          const client = supabaseAdmin ?? (supabase as any)
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const { data: profile } = await (supabase as any)
+          let { data: profile } = await (supabase as any)
             .from('profiles')
             .select('*')
             .eq('id', signInData.session.user.id)
             .single()
+
+          // If club_id is missing on profile, look it up by slug and patch it
+          if (profile && !profile.club_id) {
+            const { data: club } = await client
+              .from('clubs')
+              .select('id, name')
+              .eq('slug', loginId.toLowerCase().trim())
+              .single()
+            if (club) {
+              await client.from('profiles').update({ club_id: club.id, role: 'club_director' }).eq('id', profile.id)
+              profile = { ...profile, club_id: club.id, role: 'club_director' }
+            }
+          }
+
           set({ session: signInData.session, user: signInData.session.user, profile })
           return
         }
