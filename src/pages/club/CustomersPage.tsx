@@ -23,6 +23,7 @@ import type { Customer } from '@/types/database'
 import { formatDate, daysUntil, formatCurrency, formatPhone } from '@/lib/utils'
 import { GENDER_OPTIONS, PAYMENT_METHODS, PLAN_DURATIONS, DEFAULT_DISCOUNTS } from '@/lib/constants'
 import { Plus, UserCheck, Camera, Upload, Check } from 'lucide-react'
+import CameraModal from '@/components/ui/CameraModal'
 
 // ---------- schema ----------
 const schema = z.object({
@@ -64,13 +65,13 @@ export default function CustomersPage() {
   const [selectedDuration, setSelectedDuration] = useState<number>(1)
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'transfer'>('cash')
   const [planError, setPlanError]     = useState(false)
+  const [cameraOpen, setCameraOpen]   = useState(false)
 
   const [subOpen, setSubOpen]         = useState(false)
   const [deleteId, setDeleteId]       = useState<string | null>(null)
   const [subCustomerId, setSubCustomerId] = useState<string | null>(null)
 
-  const fileInputRef   = useRef<HTMLInputElement>(null)
-  const cameraInputRef = useRef<HTMLInputElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Open add modal if navigated here with state
   useEffect(() => {
@@ -377,13 +378,12 @@ export default function CustomersPage() {
                     className="flex items-center gap-2 px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white text-xs rounded-lg transition-colors">
                     <Upload size={13} /> Fayldan yuklash
                   </button>
-                  <button type="button" onClick={() => cameraInputRef.current?.click()}
+                  <button type="button" onClick={() => setCameraOpen(true)}
                     className="flex items-center gap-2 px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white text-xs rounded-lg transition-colors">
                     <Camera size={13} /> Kamera orqali
                   </button>
                 </div>
                 <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
-                <input ref={cameraInputRef} type="file" accept="image/*" capture="user" className="hidden" onChange={handlePhotoChange} />
               </div>
 
               {/* Fields */}
@@ -666,6 +666,12 @@ export default function CustomersPage() {
         onConfirm={() => deleteId && deleteMutation.mutate(deleteId)}
         loading={deleteMutation.isPending}
         message="Bu mijozni o'chirishni tasdiqlaysizmi? Bu amalni ortga qaytarib bo'lmaydi."
+      />
+
+      <CameraModal
+        open={cameraOpen}
+        onClose={() => setCameraOpen(false)}
+        onCapture={(dataUrl) => setPhotoPreview(dataUrl)}
       />
     </div>
   )
