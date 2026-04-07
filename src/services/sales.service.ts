@@ -92,6 +92,32 @@ export const salesService = {
       activeSubscriptions: activeSubs.count ?? 0,
     }
   },
+
+  async todayVisits(clubId: string): Promise<{ id: string; checked_in_at: string; customer_id: string }[]> {
+    const today = startOfDayISO()
+    const { data, error } = await dbAdmin
+      .from('visits')
+      .select('id, checked_in_at, customer_id')
+      .eq('club_id', clubId)
+      .gte('checked_in_at', today)
+      .order('checked_in_at', { ascending: false })
+    if (error) throw error
+    return data ?? []
+  },
+
+  async todayRevenueByType(clubId: string): Promise<{ subscriptions: number; bar: number }> {
+    const today = startOfDayISO()
+    const { data } = await dbAdmin
+      .from('sales')
+      .select('amount, sale_type')
+      .eq('club_id', clubId)
+      .gte('created_at', today)
+    const rows = (data ?? []) as { amount: number; sale_type: string }[]
+    return {
+      subscriptions: rows.filter(r => r.sale_type === 'subscription').reduce((s, r) => s + r.amount, 0),
+      bar: rows.filter(r => r.sale_type === 'bar').reduce((s, r) => s + r.amount, 0),
+    }
+  },
 }
 
 function periodStart(period: FinancePeriod): string {
