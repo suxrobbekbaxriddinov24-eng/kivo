@@ -7,11 +7,6 @@ import type { BarSaleItem } from '@/services/sales.service'
 import { toast } from '@/stores/uiStore'
 import { formatCurrency } from '@/lib/utils'
 import type { Product, PaymentMethod } from '@/types/database'
-import Button from '@/components/ui/Button'
-import Modal from '@/components/ui/Modal'
-import Select from '@/components/ui/Select'
-import type { Option } from '@/components/ui/Select'
-import { PAYMENT_METHODS } from '@/lib/constants'
 import { Plus, Minus, Trash2, ShoppingCart, CheckCircle } from 'lucide-react'
 
 interface CartItem { product: Product; qty: number }
@@ -23,9 +18,9 @@ export default function POSPage() {
 
   const [cart, setCart] = useState<CartItem[]>([])
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null)
-  const [checkoutOpen, setCheckoutOpen] = useState(false)
   const [payMethod, setPayMethod] = useState<PaymentMethod>('cash')
   const [discountPct, setDiscountPct] = useState(0)
+  const [customerPhone, setCustomerPhone] = useState('')
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ['products', clubId],
@@ -93,8 +88,8 @@ export default function POSPage() {
       qc.invalidateQueries({ queryKey: ['stats', clubId] })
       toast.success(`Sotuv amalga oshirildi — ${formatCurrency(total)}`)
       setCart([])
-      setCheckoutOpen(false)
       setDiscountPct(0)
+      setCustomerPhone('')
     },
     onError: (e: Error) => toast.error(e.message),
   })
@@ -171,110 +166,130 @@ export default function POSPage() {
       </div>
 
       {/* Cart panel */}
-      <div className="w-72 flex flex-col bg-gray-900 border border-gray-800 rounded-xl overflow-hidden shrink-0">
-        <div className="p-4 border-b border-gray-800 flex items-center gap-2">
-          <ShoppingCart size={18} className="text-gray-400" />
-          <span className="text-white font-semibold">Savatcha</span>
+      <div className="w-80 flex flex-col shrink-0 bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+
+        {/* Header */}
+        <div className="px-4 py-3 border-b border-gray-800 flex items-center gap-2">
+          <ShoppingCart size={17} className="text-gray-400" />
+          <span className="text-white font-semibold flex-1">Savatcha</span>
           {cart.length > 0 && (
-            <span className="ml-auto text-xs bg-[#00ff88] text-white rounded-full w-5 h-5 flex items-center justify-center font-bold">
-              {cart.reduce((s, i) => s + i.qty, 0)}
-            </span>
+            <button
+              onClick={() => setCart([])}
+              className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
+              title="Savatni tozalash"
+            >
+              <Trash2 size={15} />
+            </button>
           )}
         </div>
 
+        {/* Customer phone */}
+        <div className="px-4 py-3 border-b border-gray-800">
+          <p className="text-xs text-gray-500 uppercase tracking-wider mb-1.5">Mijoz (ixtiyoriy)</p>
+          <div className="flex items-center gap-2">
+            <div className="flex-1 flex items-center gap-2 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2">
+              <span className="text-red-400 text-xs">📞</span>
+              <input
+                type="text"
+                value={customerPhone}
+                onChange={(e) => setCustomerPhone(e.target.value)}
+                placeholder="99-123-45-67"
+                className="flex-1 bg-transparent text-white text-sm placeholder:text-gray-600 focus:outline-none"
+              />
+            </div>
+            <button className="w-9 h-9 flex items-center justify-center bg-gray-800 border border-gray-700 rounded-lg text-gray-400 hover:text-white hover:border-gray-500 transition-colors">
+              <CheckCircle size={15} />
+            </button>
+          </div>
+        </div>
+
+        {/* Cart items */}
         <div className="flex-1 overflow-y-auto p-3 space-y-2">
           {cart.length === 0 ? (
-            <p className="text-center text-gray-500 text-sm mt-8">Savatcha bo'sh</p>
+            <div className="flex flex-col items-center justify-center h-full py-12 gap-3">
+              <ShoppingCart size={48} className="text-gray-700" />
+              <p className="text-gray-500 text-sm font-medium">Savatcha bo'sh</p>
+              <p className="text-gray-600 text-xs text-center">Mahsulot qo'shish uchun chapdan tanlang</p>
+            </div>
           ) : (
             cart.map((item) => (
-              <div key={item.product.id} className="bg-gray-800 rounded-lg p-3 space-y-2">
+              <div key={item.product.id} className="bg-gray-800/60 border border-gray-700/50 rounded-xl p-3 space-y-2.5">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-sm text-white font-medium leading-tight flex-1">{item.product.name}</p>
-                  <button onClick={() => updateQty(item.product.id, -item.qty)} className="text-gray-500 hover:text-red-400 shrink-0">
-                    <Trash2 size={14} />
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    {item.product.image_url ? (
+                      <img src={item.product.image_url} className="w-8 h-8 rounded-lg object-cover shrink-0" />
+                    ) : (
+                      <div className="w-8 h-8 rounded-lg bg-gray-700 flex items-center justify-center shrink-0 text-sm">
+                        {item.product.category?.icon ?? '📦'}
+                      </div>
+                    )}
+                    <p className="text-sm text-white font-medium leading-tight truncate">{item.product.name}</p>
+                  </div>
+                  <button onClick={() => updateQty(item.product.id, -item.qty)} className="text-gray-600 hover:text-red-400 shrink-0 transition-colors">
+                    <Trash2 size={13} />
                   </button>
                 </div>
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => updateQty(item.product.id, -1)} className="w-6 h-6 rounded-md bg-gray-700 text-white flex items-center justify-center hover:bg-gray-600">
+                  <div className="flex items-center gap-1.5">
+                    <button onClick={() => updateQty(item.product.id, -1)} className="w-7 h-7 rounded-lg bg-gray-700 hover:bg-gray-600 text-white flex items-center justify-center transition-colors">
                       <Minus size={12} />
                     </button>
-                    <span className="text-white text-sm w-6 text-center">{item.qty}</span>
-                    <button onClick={() => updateQty(item.product.id, 1)} className="w-6 h-6 rounded-md bg-gray-700 text-white flex items-center justify-center hover:bg-gray-600" disabled={item.qty >= item.product.quantity}>
+                    <span className="text-white text-sm w-7 text-center font-medium">{item.qty}</span>
+                    <button onClick={() => updateQty(item.product.id, 1)} disabled={item.qty >= item.product.quantity} className="w-7 h-7 rounded-lg bg-gray-700 hover:bg-gray-600 text-white flex items-center justify-center transition-colors disabled:opacity-40">
                       <Plus size={12} />
                     </button>
                   </div>
-                  <p className="text-[#00ff88] text-sm font-semibold">{formatCurrency(item.product.sell_price * item.qty)}</p>
+                  <p className="text-[#00ff88] text-sm font-bold">{formatCurrency(item.product.sell_price * item.qty)}</p>
                 </div>
               </div>
             ))
           )}
         </div>
 
-        {cart.length > 0 && (
-          <div className="p-4 border-t border-gray-800 space-y-3">
-            <div className="flex justify-between text-sm text-gray-400">
-              <span>Jami:</span>
-              <span className="text-white font-semibold">{formatCurrency(subtotal)}</span>
-            </div>
-            <Button className="w-full" onClick={() => setCheckoutOpen(true)}>
-              To'lash
-            </Button>
+        {/* Footer — always visible */}
+        <div className="border-t border-gray-800 p-4 space-y-3">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-gray-400">Jami:</span>
+            <span className="text-gray-300">{formatCurrency(subtotal)}</span>
           </div>
-        )}
-      </div>
+          <div className="flex items-center justify-between">
+            <span className="text-white font-bold text-base">TO'LOV:</span>
+            <span className="text-[#00ff88] font-bold text-xl">{formatCurrency(total)}</span>
+          </div>
 
-      {/* Checkout modal */}
-      <Modal
-        open={checkoutOpen}
-        onClose={() => setCheckoutOpen(false)}
-        title="To'lovni tasdiqlash"
-        size="sm"
-        footer={
-          <>
-            <Button variant="ghost" onClick={() => setCheckoutOpen(false)}>Bekor</Button>
-            <Button
-              icon={<CheckCircle size={16} />}
-              loading={saleMutation.isPending}
-              onClick={() => saleMutation.mutate()}
+          {/* Payment method toggle */}
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => setPayMethod('cash')}
+              className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold border transition-all ${
+                payMethod === 'cash'
+                  ? 'bg-[#00ff88] border-[#00ff88] text-gray-950'
+                  : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-white hover:border-gray-500'
+              }`}
             >
-              To'lash ({formatCurrency(total)})
-            </Button>
-          </>
-        }
-      >
-        <div className="space-y-4">
-          <Select
-            label="To'lov usuli"
-            options={PAYMENT_METHODS as unknown as Option[]}
-            value={payMethod}
-            onChange={(e) => setPayMethod(e.target.value as PaymentMethod)}
-          />
-          <div className="flex flex-col gap-1">
-            <label className="text-sm text-gray-300 font-medium">Chegirma (%)</label>
-            <input
-              type="number"
-              min={0}
-              max={100}
-              value={discountPct}
-              onChange={(e) => setDiscountPct(Number(e.target.value))}
-              className="bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00ff88]"
-            />
+              💵 Naqd
+            </button>
+            <button
+              onClick={() => setPayMethod('card')}
+              className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold border transition-all ${
+                payMethod === 'card'
+                  ? 'bg-blue-600 border-blue-500 text-white'
+                  : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-white hover:border-gray-500'
+              }`}
+            >
+              💳 Karta
+            </button>
           </div>
-          <div className="bg-gray-800 rounded-lg p-3 text-sm space-y-1">
-            {cart.map((i) => (
-              <div key={i.product.id} className="flex justify-between text-gray-400">
-                <span>{i.product.name} × {i.qty}</span>
-                <span>{formatCurrency(i.product.sell_price * i.qty)}</span>
-              </div>
-            ))}
-            <div className="border-t border-gray-700 pt-2 flex justify-between text-white font-semibold">
-              <span>Jami</span>
-              <span>{formatCurrency(total)}</span>
-            </div>
-          </div>
+
+          <button
+            onClick={() => cart.length > 0 && saleMutation.mutate()}
+            disabled={cart.length === 0 || saleMutation.isPending}
+            className="w-full py-3 rounded-xl font-bold text-sm tracking-wide transition-all bg-[#00cc6a] hover:bg-[#00ff88] text-gray-950 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {saleMutation.isPending ? 'Saqlanmoqda...' : 'SOTUVNI YAKUNLASH'}
+          </button>
         </div>
-      </Modal>
+      </div>
     </div>
   )
 }
