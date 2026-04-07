@@ -13,7 +13,7 @@ export const customersService = {
   async list(clubId: string, filters?: CustomerFilters): Promise<Customer[]> {
     // Use left join (no !inner) so customers without any subscription are included
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let q = (supabase as any)
+    let q = dbAdmin
       .from('customers')
       .select('*, active_subscription:subscriptions(id,plan_name,expires_at,visits_total,visits_used,status,duration_type)')
       .eq('club_id', clubId)
@@ -45,7 +45,7 @@ export const customersService = {
   },
 
   async listAll(clubId: string): Promise<Customer[]> {
-    const { data, error } = await supabase
+    const { data, error } = await dbAdmin
       .from('customers')
       .select('*')
       .eq('club_id', clubId)
@@ -56,8 +56,7 @@ export const customersService = {
   },
 
   async get(id: string): Promise<Customer> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
+    const { data, error } = await dbAdmin
       .from('customers')
       .select('*')
       .eq('id', id)
@@ -105,8 +104,7 @@ export const customersService = {
   },
 
   async visits(customerId: string, clubId: string) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
+    const { data, error } = await dbAdmin
       .from('visits')
       .select('*')
       .eq('customer_id', customerId)

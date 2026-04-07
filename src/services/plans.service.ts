@@ -7,7 +7,7 @@ import type { Plan } from '@/types/database'
 
 export const plansService = {
   async list(clubId: string): Promise<Plan[]> {
-    const { data, error } = await db
+    const { data, error } = await dbAdmin
       .from('plans')
       .select('*')
       .eq('club_id', clubId)

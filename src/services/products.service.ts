@@ -6,7 +6,7 @@ import type { Product, ProductCategory } from '@/types/database'
 
 export const productsService = {
   async list(clubId: string): Promise<Product[]> {
-    const { data, error } = await db
+    const { data, error } = await dbAdmin
       .from('products')
       .select('*, category:product_categories(id, name)')
       .eq('club_id', clubId)
@@ -40,7 +40,7 @@ export const productsService = {
   },
 
   async listCategories(clubId: string): Promise<ProductCategory[]> {
-    const { data, error } = await db
+    const { data, error } = await dbAdmin
       .from('product_categories')
       .select('*')
       .eq('club_id', clubId)

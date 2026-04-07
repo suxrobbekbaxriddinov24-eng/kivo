@@ -75,7 +75,7 @@ export const subscriptionsService = {
   },
 
   async listForCustomer(customerId: string): Promise<Subscription[]> {
-    const { data, error } = await db
+    const { data, error } = await dbAdmin
       .from('subscriptions')
       .select('*')
       .eq('customer_id', customerId)
