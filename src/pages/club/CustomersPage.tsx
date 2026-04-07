@@ -320,7 +320,8 @@ export default function CustomersPage() {
           <div className="flex items-center gap-2 justify-end">
             <Button size="sm" variant="ghost" icon={<UserCheck size={14} />}
               onClick={() => checkInMutation.mutate(c.id)}
-              loading={checkInMutation.isPending} title="Kirdi deb belgilash" />
+              loading={checkInMutation.isPending && checkInMutation.variables === c.id}
+              title="Kirdi deb belgilash" />
             <Button size="sm" variant="outline"
               onClick={(e) => { e.stopPropagation(); setSubCustomerId(c.id); setSubOpen(true) }}>
               Obuna
