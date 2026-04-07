@@ -11,11 +11,14 @@ export interface CustomerFilters {
 
 export const customersService = {
   async list(clubId: string, filters?: CustomerFilters): Promise<Customer[]> {
-    // Use left join (no !inner) so customers without any subscription are included
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let q = dbAdmin
       .from('customers')
-      .select('*, active_subscription:subscriptions(id,plan_name,expires_at,visits_total,visits_used,status,duration_type)')
+      .select(`
+        *,
+        active_subscription:subscriptions(
+          id, plan_name, expires_at, visits_total, visits_used, status, duration_type
+        )
+      `)
       .eq('club_id', clubId)
       .order('created_at', { ascending: false })
 
@@ -30,11 +33,15 @@ export const customersService = {
     const { data, error } = await q
     if (error) throw error
 
-    // Normalize: pick the first active, non-expired subscription per customer
+    // Normalize: pick the most recent active & non-expired subscription
     const now = new Date()
     return (data ?? []).map((c: Customer & { active_subscription: unknown }) => {
       const subs = Array.isArray(c.active_subscription) ? c.active_subscription : []
-      const activeSub = (subs as Customer['active_subscription'][]).find((s) => {
+      // Sort descending by id so the newest subscription wins
+      const sorted = [...(subs as Customer['active_subscription'][])].sort((a, b) =>
+        ((b as any)?.id ?? '').localeCompare((a as any)?.id ?? '')
+      )
+      const activeSub = sorted.find((s) => {
         if (!s) return false
         if (s.status !== 'active') return false
         if (s.expires_at && new Date(s.expires_at) < now) return false

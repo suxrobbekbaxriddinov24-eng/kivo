@@ -89,6 +89,8 @@ export default function CustomersPage() {
     queryKey: ['customers', clubId],
     queryFn: () => customersService.list(clubId),
     enabled: !!clubId,
+    staleTime: 0,
+    gcTime: 0,
   })
 
   const { data: plans = [] } = useQuery({
