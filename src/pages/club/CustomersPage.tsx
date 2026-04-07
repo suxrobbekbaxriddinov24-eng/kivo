@@ -306,15 +306,41 @@ export default function CustomersPage() {
       header: 'Obuna',
       accessor: (c) => {
         const sub = c.active_subscription
-        if (!sub) return <StatusBadge status="inactive" />
+        if (!sub) return <span className="text-xs text-gray-500">—</span>
         const days = daysUntil(sub.expires_at)
+        const total = (sub as any).duration_value as number | null
+        const startsAt = (sub as any).starts_at as string | null
+        // Days elapsed since start
+        const elapsed = startsAt
+          ? Math.floor((Date.now() - new Date(startsAt).getTime()) / (1000 * 60 * 60 * 24))
+          : null
+        const pct = total && elapsed !== null
+          ? Math.min(100, Math.round((elapsed / total) * 100))
+          : null
+
+        const urgency = days !== null && days < 0 ? 'text-red-400'
+          : days !== null && days <= 3 ? 'text-orange-400'
+          : 'text-gray-400'
+
         return (
-          <div>
-            <p className="text-sm text-white">{sub.plan_name}</p>
-            {sub.expires_at && (
-              <p className={`text-xs ${days !== null && days <= 3 ? 'text-orange-400' : 'text-gray-400'}`}>
-                {days === null ? '—' : days < 0 ? 'Muddati tugagan' : days === 0 ? 'Bugun tugaydi' : `${days} kun qoldi`}
-              </p>
+          <div className="min-w-[130px]">
+            <p className="text-sm text-white font-medium">{sub.plan_name}</p>
+            <p className={`text-xs ${urgency}`}>
+              {days === null ? (sub.visits_total != null ? `${sub.visits_used}/${sub.visits_total} tashrif` : '—')
+                : days < 0 ? 'Muddati tugagan'
+                : days === 0 ? 'Bugun tugaydi'
+                : `${days} kun qoldi`}
+            </p>
+            {pct !== null && (
+              <div className="mt-1 w-full bg-gray-700 rounded-full h-1">
+                <div
+                  className="h-1 rounded-full transition-all"
+                  style={{
+                    width: `${pct}%`,
+                    background: pct > 80 ? '#ef4444' : pct > 60 ? '#eab308' : '#00ff88',
+                  }}
+                />
+              </div>
             )}
           </div>
         )

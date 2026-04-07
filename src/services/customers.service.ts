@@ -16,7 +16,7 @@ export const customersService = {
       .select(`
         *,
         active_subscription:subscriptions(
-          id, plan_name, expires_at, visits_total, visits_used, status, duration_type
+          id, plan_name, expires_at, starts_at, duration_value, visits_total, visits_used, status, duration_type
         )
       `)
       .eq('club_id', clubId)
