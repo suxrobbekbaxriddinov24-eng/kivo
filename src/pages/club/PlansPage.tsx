@@ -4,7 +4,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { plansService } from '@/services/plans.service'
 import { toast } from '@/stores/uiStore'
 import { formatCurrency } from '@/lib/utils'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import type { Plan } from '@/types/database'
@@ -52,7 +52,7 @@ export default function PlansPage() {
     enabled: !!clubId,
   })
 
-  const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, reset, setValue, watch, control, formState: { errors } } = useForm<FormData>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(schema) as any,
     defaultValues: { duration_type: 'daily', duration_value: 30 },
@@ -187,7 +187,32 @@ export default function PlansPage() {
       >
         <div className="space-y-4">
           <Input label="Nomi *" error={errors.name?.message} {...register('name')} />
-          <Input label="Narxi (so'm) *" type="number" error={errors.price?.message} {...register('price')} />
+          <Controller
+            name="price"
+            control={control}
+            render={({ field }) => {
+              const display = field.value
+                ? String(Math.round(Number(field.value))).replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
+                : ''
+              return (
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm text-gray-300 font-medium">Narxi (so'm) *</label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={display}
+                    placeholder="100 000"
+                    onChange={(e) => {
+                      const raw = e.target.value.replace(/\D/g, '')
+                      field.onChange(raw ? Number(raw) : '')
+                    }}
+                    className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm placeholder:text-gray-500 focus:outline-none focus:border-[#00ff88] focus:ring-1 focus:ring-[#00ff88]/40 transition"
+                  />
+                  {errors.price && <p className="text-xs text-red-400">{errors.price.message}</p>}
+                </div>
+              )
+            }}
+          />
           <div className="grid grid-cols-2 gap-3">
             <Select
               label="Tur"
