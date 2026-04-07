@@ -1,6 +1,7 @@
-import { supabase } from '@/lib/supabase'
+import { supabase, supabaseAdmin } from '@/lib/supabase'
 import type { Customer } from '@/types/database'
 import { isValidUUID } from '@/lib/utils'
+const dbAdmin = (supabaseAdmin ?? supabase) as any
 
 export interface CustomerFilters {
   search?: string
@@ -66,8 +67,7 @@ export const customersService = {
   },
 
   async create(payload: Omit<Customer, 'id' | 'created_at' | 'updated_at'>): Promise<Customer> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
+    const { data, error } = await dbAdmin
       .from('customers')
       .insert(payload)
       .select()
@@ -77,8 +77,7 @@ export const customersService = {
   },
 
   async update(id: string, payload: Partial<Customer>): Promise<Customer> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
+    const { data, error } = await dbAdmin
       .from('customers')
       .update({ ...payload, updated_at: new Date().toISOString() })
       .eq('id', id)
@@ -89,14 +88,12 @@ export const customersService = {
   },
 
   async delete(id: string): Promise<void> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any).from('customers').delete().eq('id', id)
+    const { error } = await dbAdmin.from('customers').delete().eq('id', id)
     if (error) throw error
   },
 
   async checkIn(customerId: string, clubId: string, soldBy: string, subscriptionId?: string): Promise<void> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any).from('visits').insert({
+    const { error } = await dbAdmin.from('visits').insert({
       customer_id: customerId,
       club_id: clubId,
       subscription_id: subscriptionId ?? null,

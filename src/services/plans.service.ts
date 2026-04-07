@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { supabase } from '@/lib/supabase'
+import { supabase, supabaseAdmin } from '@/lib/supabase'
 const db = supabase as any
+const dbAdmin = (supabaseAdmin ?? supabase) as any
+
 import type { Plan } from '@/types/database'
 
 export const plansService = {
@@ -15,13 +17,13 @@ export const plansService = {
   },
 
   async create(payload: Omit<Plan, 'id' | 'created_at' | 'updated_at'>): Promise<Plan> {
-    const { data, error } = await db.from('plans').insert(payload).select().single()
+    const { data, error } = await dbAdmin.from('plans').insert(payload).select().single()
     if (error) throw error
     return data
   },
 
   async update(id: string, payload: Partial<Plan>): Promise<Plan> {
-    const { data, error } = await db
+    const { data, error } = await dbAdmin
       .from('plans')
       .update({ ...payload, updated_at: new Date().toISOString() })
       .eq('id', id)
@@ -32,7 +34,7 @@ export const plansService = {
   },
 
   async delete(id: string): Promise<void> {
-    const { error } = await db.from('plans').delete().eq('id', id)
+    const { error } = await dbAdmin.from('plans').delete().eq('id', id)
     if (error) throw error
   },
 }

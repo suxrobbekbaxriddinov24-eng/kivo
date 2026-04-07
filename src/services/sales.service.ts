@@ -1,6 +1,7 @@
-import { supabase } from '@/lib/supabase'
+import { supabase, supabaseAdmin } from '@/lib/supabase'
 import type { Sale, PaymentMethod } from '@/types/database'
 import { startOfDayISO, startOfMonthISO, isValidUUID, roundMoney } from '@/lib/utils'
+const dbAdmin = (supabaseAdmin ?? supabase) as any
 
 export interface BarSaleItem {
   product_id: string
@@ -47,7 +48,7 @@ export const salesService = {
         sold_by: isValidUUID(payload.sold_by) ? payload.sold_by : null,
       }
     })
-    const { error } = await db.from('sales').insert(rows)
+    const { error } = await dbAdmin.from('sales').insert(rows)
     if (error) throw error
   },
 

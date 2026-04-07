@@ -1,7 +1,8 @@
-import { supabase } from '@/lib/supabase'
+import { supabase, supabaseAdmin } from '@/lib/supabase'
 import type { Subscription, PaymentMethod, Plan } from '@/types/database'
 import { isValidUUID, roundMoney } from '@/lib/utils'
 import { addDays } from 'date-fns'
+const dbAdmin = (supabaseAdmin ?? supabase) as any
 
 export interface CreateSubscriptionPayload {
   club_id: string
@@ -29,7 +30,7 @@ export const subscriptionsService = {
     // Use Math.round to avoid floating point errors in money fields
     const amount_paid = roundMoney(rest.amount_paid)
 
-    const { data: sub, error: subErr } = await db
+    const { data: sub, error: subErr } = await dbAdmin
       .from('subscriptions')
       .insert({
         club_id: rest.club_id,
@@ -56,7 +57,7 @@ export const subscriptionsService = {
     if (subErr) throw subErr
 
     // Record sale
-    await db.from('sales').insert({
+    await dbAdmin.from('sales').insert({
       club_id: rest.club_id,
       type: 'subscription',
       customer_id: rest.customer_id,
@@ -84,7 +85,7 @@ export const subscriptionsService = {
   },
 
   async freeze(id: string): Promise<void> {
-    const { error } = await db
+    const { error } = await dbAdmin
       .from('subscriptions')
       .update({ status: 'frozen', updated_at: new Date().toISOString() })
       .eq('id', id)
@@ -92,7 +93,7 @@ export const subscriptionsService = {
   },
 
   async cancel(id: string): Promise<void> {
-    const { error } = await db
+    const { error } = await dbAdmin
       .from('subscriptions')
       .update({ status: 'cancelled', updated_at: new Date().toISOString() })
       .eq('id', id)
@@ -101,7 +102,7 @@ export const subscriptionsService = {
 
   async expireStale(clubId: string): Promise<void> {
     const now = new Date().toISOString()
-    await db
+    await dbAdmin
       .from('subscriptions')
       .update({ status: 'expired' })
       .eq('club_id', clubId)
