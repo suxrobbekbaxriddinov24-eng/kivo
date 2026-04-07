@@ -536,7 +536,7 @@ export default function CustomersPage() {
           <div className="space-y-5 max-w-sm mx-auto">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">To'lov usulini tanlang</p>
             <div className="grid grid-cols-3 gap-3">
-              {(PAYMENT_METHODS as {value: string; label: string}[]).map((m) => (
+              {(PAYMENT_METHODS as unknown as {value: string; label: string}[]).map((m) => (
                 <button
                   key={m.value}
                   type="button"
