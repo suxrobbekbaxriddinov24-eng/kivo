@@ -279,6 +279,12 @@ export default function ClubsPage() {
         onClose={() => { setOpen(false); setEditClub(null); reset({ name: '', director_name: '', login_id: '', phone: '', password: '', region_id: '', status: 'active' }) }}
         title={isEdit ? 'Klubni tahrirlash' : "Yangi klub qo'shish"}
         size="md"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => { setOpen(false); setEditClub(null); reset({ name: '', director_name: '', login_id: '', phone: '', password: '', region_id: '', status: 'active' }) }}>Bekor qilish</Button>
+            <Button loading={saveMutation.isPending} onClick={handleSubmit(d => saveMutation.mutate(d))}>✓ Saqlash</Button>
+          </>
+        }
       >
         <div className="space-y-4">
           <Input
@@ -378,12 +384,6 @@ export default function ClubsPage() {
               {...register('status')}
             />
           </div>
-        </div>
-        <div className="flex justify-end gap-3 mt-5 pt-4 border-t border-gray-800">
-          <Button variant="ghost" onClick={() => { setOpen(false); setEditClub(null); reset({ name: '', director_name: '', login_id: '', phone: '', password: '', region_id: '', status: 'active' }) }}>Bekor qilish</Button>
-          <Button loading={saveMutation.isPending} onClick={handleSubmit(d => saveMutation.mutate(d))}>
-            ✓ Saqlash
-          </Button>
         </div>
       </Modal>
 

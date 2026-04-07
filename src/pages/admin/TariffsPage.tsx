@@ -169,6 +169,12 @@ export default function TariffsPage() {
         onClose={() => { setOpen(false); setEditTariff(null) }}
         title={editTariff ? 'Tarifni tahrirlash' : 'Yangi tarif yaratish'}
         size="md"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => { setOpen(false); setEditTariff(null) }}>Bekor qilish</Button>
+            <Button loading={saveMutation.isPending} onClick={handleSubmit(d => saveMutation.mutate(d))}>Saqlash</Button>
+          </>
+        }
       >
         <div className="space-y-4">
           {/* Row 1: Tarif nomi + Holat */}
@@ -201,12 +207,27 @@ export default function TariffsPage() {
                   ))}
                   {currencies.length === 0 && <option value="">UZS — So'n</option>}
                 </select>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="299 000"
-                  {...register('price')}
-                  className="flex-1 min-w-0 bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#00ff88] focus:ring-1 focus:ring-[#00ff88]/40 transition"
+                <Controller
+                  name="price"
+                  control={control}
+                  render={({ field }) => {
+                    const display = field.value
+                      ? String(Math.round(Number(field.value))).replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
+                      : ''
+                    return (
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        value={display}
+                        placeholder="299 000"
+                        onChange={(e) => {
+                          const raw = e.target.value.replace(/\D/g, '')
+                          field.onChange(raw ? Number(raw) : '')
+                        }}
+                        className="flex-1 min-w-0 bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#00ff88] focus:ring-1 focus:ring-[#00ff88]/40 transition"
+                      />
+                    )
+                  }}
                 />
               </div>
               {errors.price && <p className="text-xs text-red-400">{errors.price.message}</p>}
@@ -250,10 +271,6 @@ export default function TariffsPage() {
           </div>
         </div>
 
-        <div className="flex justify-end gap-3 mt-5 pt-4 border-t border-gray-800">
-          <Button variant="ghost" onClick={() => { setOpen(false); setEditTariff(null) }}>Bekor qilish</Button>
-          <Button loading={saveMutation.isPending} onClick={handleSubmit(d => saveMutation.mutate(d))}>Saqlash</Button>
-        </div>
       </Modal>
 
       <ConfirmDialog

@@ -134,7 +134,14 @@ export default function CategoriesPage() {
       )}
 
       {/* Add modal */}
-      <Modal open={showModal} onClose={() => setShowModal(false)} title="Yangi kategoriya" size="sm">
+      <Modal open={showModal} onClose={() => setShowModal(false)} title="Yangi kategoriya" size="sm"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setShowModal(false)}>Bekor qilish</Button>
+            <Button onClick={handleAdd} disabled={!name.trim()}>Saqlash</Button>
+          </>
+        }
+      >
         <div className="space-y-4">
           <Input
             label="Kategoriya nomi *"
@@ -158,10 +165,6 @@ export default function CategoriesPage() {
               className="bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm placeholder:text-gray-600 focus:outline-none focus:border-[#00ff88] focus:ring-1 focus:ring-[#00ff88]/40 transition resize-none"
             />
           </div>
-        </div>
-        <div className="flex justify-end gap-3 mt-5">
-          <Button variant="ghost" onClick={() => setShowModal(false)}>Bekor qilish</Button>
-          <Button onClick={handleAdd} disabled={!name.trim()}>Saqlash</Button>
         </div>
       </Modal>
     </div>
