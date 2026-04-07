@@ -71,16 +71,20 @@ export default function InventoryPage() {
   const [newCatName, setNewCatName] = useState('')
   const [newCatIcon, setNewCatIcon] = useState('📦')
 
-  const { data: products = [], isLoading } = useQuery({
+  const { data: products = [], isLoading, error: productsError } = useQuery({
     queryKey: ['products', clubId],
     queryFn: () => productsService.list(clubId),
     enabled: !!clubId,
+    staleTime: 0,
+    gcTime: 0,
   })
 
   const { data: categories = [] } = useQuery({
     queryKey: ['product_categories', clubId],
     queryFn: () => productsService.listCategories(clubId),
     enabled: !!clubId,
+    staleTime: 0,
+    gcTime: 0,
   })
 
   const { register, handleSubmit, reset, setValue, control, formState: { errors } } = useForm<FormData>({
@@ -120,9 +124,19 @@ export default function InventoryPage() {
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    const reader = new FileReader()
-    reader.onload = (ev) => setPhotoPreview(ev.target?.result as string)
-    reader.readAsDataURL(file)
+    const img = new Image()
+    const objectUrl = URL.createObjectURL(file)
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      const MAX = 400
+      const ratio = Math.min(MAX / img.width, MAX / img.height, 1)
+      canvas.width = Math.round(img.width * ratio)
+      canvas.height = Math.round(img.height * ratio)
+      canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height)
+      setPhotoPreview(canvas.toDataURL('image/jpeg', 0.7))
+      URL.revokeObjectURL(objectUrl)
+    }
+    img.src = objectUrl
   }
 
   const saveMutation = useMutation({
@@ -230,7 +244,7 @@ export default function InventoryPage() {
         rowKey={(p) => p.id}
         searchable
         searchPlaceholder="Mahsulot qidirish..."
-        emptyMessage="Mahsulotlar yo'q"
+        emptyMessage={productsError ? `Xato: ${(productsError as Error).message}` : "Mahsulotlar yo'q"}
         actions={(p) => (
           <div className="flex gap-2 justify-end">
             <Button size="sm" variant="outline" onClick={() => openEdit(p)}>Tahrirlash</Button>
