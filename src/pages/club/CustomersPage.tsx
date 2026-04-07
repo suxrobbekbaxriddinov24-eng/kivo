@@ -157,8 +157,19 @@ export default function CustomersPage() {
   function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    const url = URL.createObjectURL(file)
-    setPhotoPreview(url)
+    const img = new Image()
+    const objectUrl = URL.createObjectURL(file)
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      const MAX = 200
+      const ratio = Math.min(MAX / img.width, MAX / img.height, 1)
+      canvas.width = Math.round(img.width * ratio)
+      canvas.height = Math.round(img.height * ratio)
+      canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height)
+      setPhotoPreview(canvas.toDataURL('image/jpeg', 0.7))
+      URL.revokeObjectURL(objectUrl)
+    }
+    img.src = objectUrl
   }
 
   function goToStep2(data: FormData) {
@@ -181,7 +192,7 @@ export default function CustomersPage() {
         gender: data.gender ?? null,
         birth_date: data.birth_date ?? null,
         notes: data.notes ?? null,
-        photo_url: null,
+        photo_url: photoPreview ?? null,
         address: null,
         locker_number: null,
         branch_id: null,
@@ -292,9 +303,13 @@ export default function CustomersPage() {
       header: 'Mijoz',
       accessor: (c) => (
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-[#00ff88]/10 flex items-center justify-center text-[#00ff88] text-xs font-bold shrink-0">
-            {c.first_name[0]?.toUpperCase()}
-          </div>
+          {c.photo_url ? (
+            <img src={c.photo_url} alt={c.first_name} className="w-8 h-8 rounded-full object-cover shrink-0" />
+          ) : (
+            <div className="w-8 h-8 rounded-full bg-[#00ff88]/10 flex items-center justify-center text-[#00ff88] text-xs font-bold shrink-0">
+              {c.first_name[0]?.toUpperCase()}
+            </div>
+          )}
           <div>
             <p className="text-white font-medium">{c.first_name} {c.last_name}</p>
             <p className="text-xs text-gray-400">{formatPhone(c.phone)}</p>
