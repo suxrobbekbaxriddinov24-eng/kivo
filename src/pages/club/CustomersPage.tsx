@@ -81,12 +81,6 @@ export default function CustomersPage() {
     }
   }, [location.state])
 
-  // H-2: Mark expired subscriptions as expired when the page loads
-  useEffect(() => {
-    if (clubId) {
-      subscriptionsService.expireStale(clubId).catch(() => {/* non-fatal */})
-    }
-  }, [clubId])
 
   const { data: customers = [], isLoading } = useQuery({
     queryKey: ['customers', clubId],
