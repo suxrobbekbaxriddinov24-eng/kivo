@@ -9,10 +9,10 @@ export function cn(...inputs: ClassValue[]) {
 
 /** Format number as UZS: 1 250 000 so'm */
 export function formatCurrency(amount: number, currency = 'UZS'): string {
-  return (
-    new Intl.NumberFormat('uz-UZ', { maximumFractionDigits: 0 }).format(amount) +
-    ` ${currency}`
-  )
+  const formatted = Math.round(amount)
+    .toString()
+    .replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
+  return `${formatted} ${currency}`
 }
 
 /** Format date as DD.MM.YYYY */
