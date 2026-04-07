@@ -14,8 +14,7 @@ import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
 import StatusBadge from '@/components/ui/StatusBadge'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
-import { PLAN_CATEGORY_OPTIONS } from '@/lib/constants'
-import { Plus, Clock, Star } from 'lucide-react'
+import { Plus, Clock, Star, X } from 'lucide-react'
 
 const schema = z.object({
   name: z.string().min(1, 'Nom kiritilishi shart'),
@@ -37,6 +36,15 @@ export default function PlansPage() {
   const [open, setOpen] = useState(false)
   const [editPlan, setEditPlan] = useState<Plan | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [amenities, setAmenities] = useState<string[]>([])
+  const [amenityInput, setAmenityInput] = useState('')
+
+  const addAmenity = () => {
+    const val = amenityInput.trim()
+    if (val && !amenities.includes(val)) setAmenities((prev) => [...prev, val])
+    setAmenityInput('')
+  }
+  const removeAmenity = (a: string) => setAmenities((prev) => prev.filter((x) => x !== a))
 
   const { data: plans = [], isLoading } = useQuery({
     queryKey: ['plans', clubId],
@@ -63,6 +71,16 @@ export default function PlansPage() {
     setValue('time_restricted', p.time_restricted)
     setValue('start_time', p.start_time ?? '')
     setValue('end_time', p.end_time ?? '')
+    setAmenities(Array.isArray(p.amenities) ? (p.amenities as string[]) : [])
+    setAmenityInput('')
+    setOpen(true)
+  }
+
+  const openAdd = () => {
+    reset()
+    setEditPlan(null)
+    setAmenities([])
+    setAmenityInput('')
     setOpen(true)
   }
 
@@ -75,7 +93,7 @@ export default function PlansPage() {
         duration_type: data.duration_type,
         duration_value: data.duration_value,
         category: data.category || null,
-        amenities: [],
+        amenities,
         time_restricted: data.time_restricted ?? false,
         start_time: data.time_restricted ? (data.start_time ?? null) : null,
         end_time: data.time_restricted ? (data.end_time ?? null) : null,
@@ -109,7 +127,7 @@ export default function PlansPage() {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <p className="text-gray-400 text-sm">{plans.length} ta tarif</p>
-        <Button icon={<Plus size={16} />} onClick={() => { reset(); setEditPlan(null); setOpen(true) }}>
+        <Button icon={<Plus size={16} />} onClick={openAdd}>
           Tarif qo'shish
         </Button>
       </div>
@@ -196,6 +214,44 @@ export default function PlansPage() {
               <Input label="Tugash vaqti" type="time" {...register('end_time')} />
             </div>
           )}
+
+          {/* Amenities */}
+          <div className="flex flex-col gap-2">
+            <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+              Xizmat ichiga nimalar kiradi
+            </label>
+            <div className="bg-gray-800/60 border border-gray-700 rounded-lg p-3 flex flex-col gap-2">
+              {amenities.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {amenities.map((a) => (
+                    <span key={a} className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-sm font-semibold text-gray-950" style={{ background: 'linear-gradient(135deg,#00ff88,#00cc6d)' }}>
+                      {a}
+                      <button type="button" onClick={() => removeAmenity(a)} className="hover:opacity-70 transition-opacity">
+                        <X size={12} />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={amenityInput}
+                  onChange={(e) => setAmenityInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addAmenity() } }}
+                  placeholder="Xususiyat yozish..."
+                  className="flex-1 bg-transparent text-sm text-white placeholder:text-gray-600 outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={addAmenity}
+                  className="w-7 h-7 rounded-lg bg-gray-700 hover:bg-[#00ff88] hover:text-gray-950 text-gray-400 transition-colors flex items-center justify-center"
+                >
+                  <Plus size={14} />
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </Modal>
 
