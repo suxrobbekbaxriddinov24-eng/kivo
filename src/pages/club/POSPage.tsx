@@ -107,16 +107,17 @@ export default function POSPage() {
         <div className="flex gap-2 flex-wrap">
           <button
             onClick={() => setCategoryFilter(null)}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${!categoryFilter ? 'bg-[#00ff88] text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}`}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all border ${!categoryFilter ? 'bg-[#00ff88]/15 border-[#00ff88] text-[#00ff88]' : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-white hover:border-gray-500'}`}
           >
-            Barchasi
+            🛒 Barchasi
           </button>
           {categories.map((cat) => (
             <button
               key={cat.id}
               onClick={() => setCategoryFilter(cat.id)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${categoryFilter === cat.id ? 'bg-[#00ff88] text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all border ${categoryFilter === cat.id ? 'bg-[#00ff88]/15 border-[#00ff88] text-[#00ff88]' : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-white hover:border-gray-500'}`}
             >
+              {cat.icon && <span>{cat.icon}</span>}
               {cat.name}
             </button>
           ))}

@@ -197,6 +197,7 @@ export interface ProductCategory {
   id: string
   club_id: string
   name: string
+  icon?: string | null
   created_at: string
 }
 

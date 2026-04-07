@@ -16,11 +16,10 @@ import StatusBadge from '@/components/ui/StatusBadge'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import StatCard from '@/components/ui/StatCard'
 import CameraModal from '@/components/ui/CameraModal'
-import { Plus, Package, AlertTriangle, DollarSign, Upload, Camera } from 'lucide-react'
+import { Plus, Package, AlertTriangle, DollarSign, Upload, Camera, X } from 'lucide-react'
 
 const schema = z.object({
   name:           z.string().min(1, 'Nom kiritilishi shart'),
-  category_name:  z.string().optional(),
   sell_price:     z.coerce.number().min(0, "Narx 0 dan katta bo'lishi kerak"),
   purchase_price: z.coerce.number().min(0),
   quantity:       z.coerce.number().min(0),
@@ -66,6 +65,12 @@ export default function InventoryPage() {
   const [cameraOpen, setCameraOpen]   = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // Category selection state (outside RHF)
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
+  const [addingCat, setAddingCat]   = useState(false)
+  const [newCatName, setNewCatName] = useState('')
+  const [newCatIcon, setNewCatIcon] = useState('📦')
+
   const { data: products = [], isLoading } = useQuery({
     queryKey: ['products', clubId],
     queryFn: () => productsService.list(clubId),
@@ -88,13 +93,16 @@ export default function InventoryPage() {
     reset({ low_stock_alert: 10, quantity: 0, purchase_price: 0, unit: 'Dona' })
     setEditProduct(null)
     setPhotoPreview(null)
+    setSelectedCategoryId(null)
+    setAddingCat(false)
+    setNewCatName('')
+    setNewCatIcon('📦')
     setOpen(true)
   }
 
   const openEdit = (p: Product) => {
     setEditProduct(p)
     setValue('name', p.name)
-    setValue('category_name', p.category?.name ?? '')
     setValue('sell_price', p.sell_price)
     setValue('purchase_price', p.purchase_price)
     setValue('quantity', p.quantity)
@@ -102,6 +110,10 @@ export default function InventoryPage() {
     setValue('barcode', p.barcode ?? '')
     setValue('unit', 'Dona')
     setPhotoPreview(p.image_url ?? null)
+    setSelectedCategoryId(p.category_id ?? null)
+    setAddingCat(false)
+    setNewCatName('')
+    setNewCatIcon('📦')
     setOpen(true)
   }
 
@@ -113,24 +125,10 @@ export default function InventoryPage() {
 
   const saveMutation = useMutation({
     mutationFn: async (data: FormData) => {
-      // Create category if new name provided
-      let categoryId = editProduct?.category_id ?? null
-      if (data.category_name?.trim()) {
-        const existing = categories.find((c: { id: string; name: string }) =>
-          c.name.toLowerCase() === data.category_name!.trim().toLowerCase()
-        )
-        if (existing) {
-          categoryId = existing.id
-        } else {
-          const newCat = await productsService.createCategory(clubId, data.category_name.trim())
-          categoryId = newCat.id
-        }
-      }
-
       const payload = {
         club_id:         clubId,
         name:            data.name,
-        category_id:     categoryId,
+        category_id:     selectedCategoryId,
         sell_price:      data.sell_price,
         purchase_price:  data.purchase_price,
         quantity:        data.quantity,
@@ -151,6 +149,7 @@ export default function InventoryPage() {
       setOpen(false)
       setEditProduct(null)
       setPhotoPreview(null)
+      setSelectedCategoryId(null)
     },
     onError: (e: Error) => toast.error(e.message),
   })
@@ -290,26 +289,96 @@ export default function InventoryPage() {
             </div>
           </div>
 
-          {/* Name + Category */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-1">Mahsulot nomi *</label>
-              <input {...register('name')} placeholder="Masalan: Protein Bar"
-                className="w-full bg-[#1a1f2e] border border-gray-700 text-white rounded-lg px-3 py-2.5 text-sm placeholder:text-gray-600 focus:outline-none focus:border-[#00ff88] focus:ring-1 focus:ring-[#00ff88]/40 transition" />
-              {errors.name && <p className="text-xs text-red-400 mt-1">{errors.name.message}</p>}
+          {/* Name */}
+          <div>
+            <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-1">Mahsulot nomi *</label>
+            <input {...register('name')} placeholder="Masalan: Protein Bar"
+              className="w-full bg-[#1a1f2e] border border-gray-700 text-white rounded-lg px-3 py-2.5 text-sm placeholder:text-gray-600 focus:outline-none focus:border-[#00ff88] focus:ring-1 focus:ring-[#00ff88]/40 transition" />
+            {errors.name && <p className="text-xs text-red-400 mt-1">{errors.name.message}</p>}
+          </div>
+
+          {/* Category pills */}
+          <div>
+            <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-2">Kategoriya</label>
+            <div className="flex flex-wrap gap-2">
+              {categories.map((c: { id: string; name: string; icon?: string | null }) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => setSelectedCategoryId(selectedCategoryId === c.id ? null : c.id)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border transition-all ${
+                    selectedCategoryId === c.id
+                      ? 'bg-[#00ff88]/15 border-[#00ff88] text-[#00ff88]'
+                      : 'bg-gray-800 border-gray-700 text-gray-300 hover:border-gray-500'
+                  }`}
+                >
+                  {c.icon && <span>{c.icon}</span>}
+                  {c.name}
+                </button>
+              ))}
+              {!addingCat && (
+                <button
+                  type="button"
+                  onClick={() => setAddingCat(true)}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-full text-sm border border-dashed border-gray-600 text-gray-500 hover:text-white hover:border-gray-400 transition-all"
+                >
+                  <Plus size={13} /> Yangi
+                </button>
+              )}
             </div>
-            <div>
-              <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-1">Kategoriya</label>
-              <input {...register('category_name')}
-                placeholder="Masalan: Ichimliqlar (yangi yaratir)"
-                list="cat-list"
-                className="w-full bg-[#1a1f2e] border border-gray-700 text-white rounded-lg px-3 py-2.5 text-sm placeholder:text-gray-600 focus:outline-none focus:border-[#00ff88] focus:ring-1 focus:ring-[#00ff88]/40 transition" />
-              <datalist id="cat-list">
-                {categories.map((c: { id: string; name: string }) => (
-                  <option key={c.id} value={c.name} />
-                ))}
-              </datalist>
-            </div>
+
+            {addingCat && (
+              <div className="mt-2 flex items-center gap-2 p-2 bg-gray-800/60 border border-gray-700 rounded-xl">
+                <input
+                  type="text"
+                  value={newCatIcon}
+                  onChange={(e) => setNewCatIcon(e.target.value)}
+                  maxLength={2}
+                  className="w-10 text-center bg-gray-700 border border-gray-600 text-white rounded-lg py-1.5 text-sm focus:outline-none focus:border-[#00ff88] transition"
+                  placeholder="📦"
+                />
+                <input
+                  type="text"
+                  value={newCatName}
+                  onChange={(e) => setNewCatName(e.target.value)}
+                  placeholder="Kategoriya nomi"
+                  className="flex-1 bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-1.5 text-sm placeholder:text-gray-500 focus:outline-none focus:border-[#00ff88] transition"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      if (!newCatName.trim()) return
+                      productsService.createCategory(clubId, newCatName.trim(), newCatIcon || undefined).then((cat) => {
+                        qc.invalidateQueries({ queryKey: ['product_categories', clubId] })
+                        setSelectedCategoryId(cat.id)
+                        setAddingCat(false)
+                        setNewCatName('')
+                        setNewCatIcon('📦')
+                      })
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!newCatName.trim()) return
+                    productsService.createCategory(clubId, newCatName.trim(), newCatIcon || undefined).then((cat) => {
+                      qc.invalidateQueries({ queryKey: ['product_categories', clubId] })
+                      setSelectedCategoryId(cat.id)
+                      setAddingCat(false)
+                      setNewCatName('')
+                      setNewCatIcon('📦')
+                    })
+                  }}
+                  className="px-3 py-1.5 bg-[#00ff88] text-gray-950 rounded-lg text-xs font-semibold hover:bg-[#00ff88]/90 transition"
+                >
+                  Qo'sh
+                </button>
+                <button type="button" onClick={() => { setAddingCat(false); setNewCatName(''); setNewCatIcon('📦') }}
+                  className="p-1 text-gray-500 hover:text-white transition">
+                  <X size={14} />
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Barcode + Quantity */}
