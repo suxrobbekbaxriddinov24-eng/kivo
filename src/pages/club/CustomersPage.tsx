@@ -22,7 +22,7 @@ import { z } from 'zod'
 import type { Customer } from '@/types/database'
 import { formatDate, daysUntil, formatCurrency, formatPhone } from '@/lib/utils'
 import { GENDER_OPTIONS, PAYMENT_METHODS, PLAN_DURATIONS, DEFAULT_DISCOUNTS } from '@/lib/constants'
-import { Plus, UserCheck, Camera, Upload, Check } from 'lucide-react'
+import { Plus, UserCheck, Camera, Upload, Check, Pencil } from 'lucide-react'
 import CameraModal from '@/components/ui/CameraModal'
 
 // ---------- schema ----------
@@ -66,6 +66,9 @@ export default function CustomersPage() {
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'transfer'>('cash')
   const [planError, setPlanError]     = useState(false)
   const [cameraOpen, setCameraOpen]   = useState(false)
+
+  const [editOpen, setEditOpen]        = useState(false)
+  const [editCustomer, setEditCustomer] = useState<Customer | null>(null)
 
   const [subOpen, setSubOpen]         = useState(false)
   const [deleteId, setDeleteId]       = useState<string | null>(null)
@@ -136,6 +139,19 @@ export default function CustomersPage() {
     setAddOpen(true)
   }
 
+  function openEdit(c: Customer) {
+    setEditCustomer(c)
+    reset({
+      full_name: [c.first_name, c.last_name].filter(Boolean).join(' '),
+      phone: c.phone ?? '',
+      email: (c as any).email ?? '',
+      gender: c.gender ?? undefined,
+      birth_date: c.birth_date ?? '',
+      notes: c.notes ?? '',
+    })
+    setEditOpen(true)
+  }
+
   function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
@@ -201,6 +217,28 @@ export default function CustomersPage() {
       qc.invalidateQueries({ queryKey: ['customers', clubId] })
       toast.success("Mijoz o'chirildi")
       setDeleteId(null)
+    },
+    onError: (e: Error) => toast.error(e.message),
+  })
+
+  const updateMutation = useMutation({
+    mutationFn: async (data: FormData) => {
+      if (!editCustomer) return
+      const parts = data.full_name.trim().split(/\s+/)
+      await customersService.update(editCustomer.id, {
+        first_name: parts[0] ?? '',
+        last_name: parts.slice(1).join(' ') || null,
+        phone: data.phone ?? null,
+        gender: data.gender ?? null,
+        birth_date: data.birth_date ?? null,
+        notes: data.notes ?? null,
+      } as any)
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['customers', clubId] })
+      toast.success('Mijoz yangilandi')
+      setEditOpen(false)
+      setEditCustomer(null)
     },
     onError: (e: Error) => toast.error(e.message),
   })
@@ -316,6 +354,9 @@ export default function CustomersPage() {
               onClick={() => checkInMutation.mutate(c.id)}
               loading={checkInMutation.isPending && checkInMutation.variables === c.id}
               title="Kirdi deb belgilash" />
+            <Button size="sm" variant="ghost" icon={<Pencil size={14} />}
+              onClick={(e) => { e.stopPropagation(); openEdit(c) }}
+              title="Tahrirlash" />
             <Button size="sm" variant="outline"
               onClick={(e) => { e.stopPropagation(); setSubCustomerId(c.id); setSubOpen(true) }}>
               Obuna
@@ -652,6 +693,47 @@ export default function CustomersPage() {
               </div>
             </div>
           )}
+        </div>
+      </Modal>
+
+      {/* ── Edit customer modal ── */}
+      <Modal
+        open={editOpen}
+        onClose={() => { setEditOpen(false); setEditCustomer(null) }}
+        title="Mijozni tahrirlash"
+        size="sm"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => { setEditOpen(false); setEditCustomer(null) }}>Bekor qilish</Button>
+            <Button loading={updateMutation.isPending} onClick={handleSubmit(d => updateMutation.mutate(d))}>Saqlash</Button>
+          </>
+        }
+      >
+        <div className="space-y-3">
+          <Input label="To'liq ism *" placeholder="Ism Familiya" error={errors.full_name?.message} {...register('full_name')} />
+          <Controller
+            name="phone"
+            control={control}
+            render={({ field }) => (
+              <PhoneInput label="Telefon raqami" value={field.value ?? ''} onChange={field.onChange} />
+            )}
+          />
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1">
+              <label className="text-sm text-gray-300 font-medium">Jinsi</label>
+              <select {...register('gender')} className="bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#00ff88] focus:ring-1 focus:ring-[#00ff88]/40 transition">
+                <option value="">Tanlang</option>
+                {(GENDER_OPTIONS as unknown as {value: string; label: string}[]).map(o => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+            </div>
+            <Input label="Tug'ilgan sana" type="date" {...register('birth_date')} />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-sm text-gray-300 font-medium">Izoh</label>
+            <textarea {...register('notes')} rows={2} placeholder="Qo'shimcha ma'lumot..." className="bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm placeholder:text-gray-600 focus:outline-none focus:border-[#00ff88] focus:ring-1 focus:ring-[#00ff88]/40 transition resize-none" />
+          </div>
         </div>
       </Modal>
 
