@@ -13,7 +13,7 @@ interface CartItem { product: Product; qty: number }
 
 export default function POSPage() {
   const { profile } = useAuthStore()
-  const clubId = profile?.club_id!
+  const clubId = profile?.club_id ?? ''
   const qc = useQueryClient()
 
   const [cart, setCart] = useState<CartItem[]>([])

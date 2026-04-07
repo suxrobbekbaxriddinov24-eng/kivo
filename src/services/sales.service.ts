@@ -48,6 +48,14 @@ export const salesService = {
         sold_by: isValidUUID(payload.sold_by) ? payload.sold_by : null,
       }
     })
+    // Validate stock server-side
+    for (const item of payload.items) {
+      const { data: prod } = await dbAdmin.from('products').select('quantity').eq('id', item.product_id).single()
+      if (!prod || prod.quantity < item.quantity) {
+        throw new Error(`"${item.product_name}" mahsuloti yetarli emas (${prod?.quantity ?? 0} ta qoldi)`)
+      }
+    }
+
     const { error } = await dbAdmin.from('sales').insert(rows)
     if (error) throw error
   },
@@ -76,9 +84,9 @@ export const salesService = {
     const now = new Date().toISOString()
 
     const [todaySales, monthSales, activeSubs] = await Promise.all([
-      supabase.from('sales').select('amount').eq('club_id', clubId).gte('created_at', today),
-      supabase.from('sales').select('amount').eq('club_id', clubId).gte('created_at', month),
-      supabase.from('subscriptions').select('id', { count: 'exact' })
+      dbAdmin.from('sales').select('amount').eq('club_id', clubId).gte('created_at', today),
+      dbAdmin.from('sales').select('amount').eq('club_id', clubId).gte('created_at', month),
+      dbAdmin.from('subscriptions').select('id', { count: 'exact' })
         .eq('club_id', clubId).eq('status', 'active').gt('expires_at', now),
     ])
 
@@ -109,13 +117,13 @@ export const salesService = {
     const today = startOfDayISO()
     const { data } = await dbAdmin
       .from('sales')
-      .select('amount, sale_type')
+      .select('amount, type')
       .eq('club_id', clubId)
       .gte('created_at', today)
-    const rows = (data ?? []) as { amount: number; sale_type: string }[]
+    const rows = (data ?? []) as { amount: number; type: string }[]
     return {
-      subscriptions: rows.filter(r => r.sale_type === 'subscription').reduce((s, r) => s + r.amount, 0),
-      bar: rows.filter(r => r.sale_type === 'bar').reduce((s, r) => s + r.amount, 0),
+      subscriptions: rows.filter(r => r.type === 'subscription').reduce((s, r) => s + r.amount, 0),
+      bar: rows.filter(r => r.type === 'bar').reduce((s, r) => s + r.amount, 0),
     }
   },
 }

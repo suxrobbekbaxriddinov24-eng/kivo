@@ -23,7 +23,7 @@ type FormData = z.infer<typeof schema>
 
 export default function SettingsPage() {
   const { profile } = useAuthStore()
-  const clubId = profile?.club_id!
+  const clubId = profile?.club_id ?? ''
   const qc = useQueryClient()
 
   const { data: club } = useQuery({

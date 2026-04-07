@@ -10,7 +10,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
 
 export default function ClubDashboardPage() {
   const { profile } = useAuthStore()
-  const clubId = profile?.club_id!
+  const clubId = profile?.club_id ?? ''
 
   const { data: stats } = useQuery({
     queryKey: ['stats', clubId],

@@ -102,11 +102,12 @@ export const subscriptionsService = {
 
   async expireStale(clubId: string): Promise<void> {
     const now = new Date().toISOString()
-    await dbAdmin
+    const { error } = await dbAdmin
       .from('subscriptions')
       .update({ status: 'expired' })
       .eq('club_id', clubId)
       .eq('status', 'active')
       .lt('expires_at', now)
+    if (error) console.error('expireStale error:', error)
   },
 }

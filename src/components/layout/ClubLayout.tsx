@@ -70,7 +70,7 @@ function NotificationBell({ clubId }: { clubId: string }) {
     queryKey: ['platform_tariff', club?.tariff_id],
     queryFn: async () => {
       if (!club?.tariff_id) return null
-      const { data } = await dbAdmin.from('platform_tariffs').select('*').eq('id', club.tariff_id).single()
+      const { data } = await (supabase as any).from('platform_tariffs').select('*').eq('id', club.tariff_id).single()
       return data ?? null
     },
     enabled: !!club?.tariff_id,

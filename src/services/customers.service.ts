@@ -21,12 +21,14 @@ export const customersService = {
       `)
       .eq('club_id', clubId)
       .order('created_at', { ascending: false })
+      .limit(200)
 
     if (filters?.status) q = q.eq('status', filters.status)
     if (filters?.branch_id) q = q.eq('branch_id', filters.branch_id)
-    if (filters?.search) {
+    const safe = (filters?.search ?? '').replace(/[%_,.()']/g, ' ').trim()
+    if (safe) {
       q = q.or(
-        `first_name.ilike.%${filters.search}%,last_name.ilike.%${filters.search}%,phone.ilike.%${filters.search}%`
+        `first_name.ilike.%${safe}%,last_name.ilike.%${safe}%,phone.ilike.%${safe}%`
       )
     }
 
@@ -62,12 +64,13 @@ export const customersService = {
     return data ?? []
   },
 
-  async get(id: string): Promise<Customer> {
-    const { data, error } = await dbAdmin
+  async get(id: string, clubId?: string): Promise<Customer> {
+    let q = dbAdmin
       .from('customers')
       .select('*')
       .eq('id', id)
-      .single()
+    if (clubId) q = q.eq('club_id', clubId)
+    const { data, error } = await q.single()
     if (error) throw error
     return data
   },
@@ -93,8 +96,10 @@ export const customersService = {
     return data
   },
 
-  async delete(id: string): Promise<void> {
-    const { error } = await dbAdmin.from('customers').delete().eq('id', id)
+  async delete(id: string, clubId?: string): Promise<void> {
+    let q = dbAdmin.from('customers').delete().eq('id', id)
+    if (clubId) q = q.eq('club_id', clubId)
+    const { error } = await q
     if (error) throw error
   },
 

@@ -30,7 +30,7 @@ type FormData = z.infer<typeof schema>
 
 export default function PlansPage() {
   const { profile } = useAuthStore()
-  const clubId = profile?.club_id!
+  const clubId = profile?.club_id ?? ''
   const qc = useQueryClient()
 
   const [open, setOpen] = useState(false)

@@ -15,7 +15,7 @@ import { uz } from 'date-fns/locale'
 
 export default function FinancePage() {
   const { profile } = useAuthStore()
-  const clubId = profile?.club_id!
+  const clubId = profile?.club_id ?? ''
   const [period, setPeriod] = useState<FinancePeriod>('month')
 
   const { data: sales = [], isLoading } = useQuery({

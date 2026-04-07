@@ -21,21 +21,23 @@ export const productsService = {
     return data
   },
 
-  async update(id: string, payload: Partial<Product>): Promise<Product> {
+  async update(id: string, payload: Partial<Product>, clubId?: string): Promise<Product> {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { category: _cat, ...rest } = payload as Product & { category?: unknown }
-    const { data, error } = await dbAdmin
+    let q = dbAdmin
       .from('products')
       .update({ ...rest, updated_at: new Date().toISOString() })
       .eq('id', id)
-      .select()
-      .single()
+    if (clubId) q = q.eq('club_id', clubId)
+    const { data, error } = await q.select().single()
     if (error) throw error
     return data
   },
 
-  async delete(id: string): Promise<void> {
-    const { error } = await dbAdmin.from('products').delete().eq('id', id)
+  async delete(id: string, clubId?: string): Promise<void> {
+    let q = dbAdmin.from('products').delete().eq('id', id)
+    if (clubId) q = q.eq('club_id', clubId)
+    const { error } = await q
     if (error) throw error
   },
 

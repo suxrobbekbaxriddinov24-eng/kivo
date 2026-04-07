@@ -53,7 +53,7 @@ const DURATIONS = [
 // ---------- component ----------
 export default function CustomersPage() {
   const { profile } = useAuthStore()
-  const clubId = profile?.club_id!
+  const clubId = profile?.club_id ?? ''
   const qc = useQueryClient()
   const navigate = useNavigate()
   const location = useLocation()

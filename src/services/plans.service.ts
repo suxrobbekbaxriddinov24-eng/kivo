@@ -22,19 +22,21 @@ export const plansService = {
     return data
   },
 
-  async update(id: string, payload: Partial<Plan>): Promise<Plan> {
-    const { data, error } = await dbAdmin
+  async update(id: string, payload: Partial<Plan>, clubId?: string): Promise<Plan> {
+    let q = dbAdmin
       .from('plans')
       .update({ ...payload, updated_at: new Date().toISOString() })
       .eq('id', id)
-      .select()
-      .single()
+    if (clubId) q = q.eq('club_id', clubId)
+    const { data, error } = await q.select().single()
     if (error) throw error
     return data
   },
 
-  async delete(id: string): Promise<void> {
-    const { error } = await dbAdmin.from('plans').delete().eq('id', id)
+  async delete(id: string, clubId?: string): Promise<void> {
+    let q = dbAdmin.from('plans').delete().eq('id', id)
+    if (clubId) q = q.eq('club_id', clubId)
+    const { error } = await q
     if (error) throw error
   },
 }

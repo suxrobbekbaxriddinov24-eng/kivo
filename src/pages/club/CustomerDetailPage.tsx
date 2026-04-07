@@ -11,7 +11,7 @@ import { ArrowLeft, Phone, Calendar, User } from 'lucide-react'
 export default function CustomerDetailPage() {
   const { customerId } = useParams<{ customerId: string }>()
   const { profile } = useAuthStore()
-  const clubId = profile?.club_id!
+  const clubId = profile?.club_id ?? ''
 
   const { data: customer, isLoading } = useQuery({
     queryKey: ['customer', customerId],
