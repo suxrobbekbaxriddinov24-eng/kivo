@@ -164,6 +164,15 @@ export default function PlansPage() {
                   </span>
                 )}
               </div>
+              {Array.isArray(plan.amenities) && plan.amenities.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {(plan.amenities as string[]).map((a) => (
+                    <span key={a} className="px-2 py-0.5 rounded-md bg-[#00ff88]/10 text-[#00ff88] text-xs font-medium">
+                      {a}
+                    </span>
+                  ))}
+                </div>
+              )}
               <div className="flex gap-2 mt-auto">
                 <Button size="sm" variant="outline" className="flex-1" onClick={() => openEdit(plan)}>Tahrirlash</Button>
                 <Button size="sm" variant="danger" onClick={() => setDeleteId(plan.id)}>O'chirish</Button>
