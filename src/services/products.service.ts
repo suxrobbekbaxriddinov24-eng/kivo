@@ -51,10 +51,10 @@ export const productsService = {
     return data ?? []
   },
 
-  async createCategory(clubId: string, name: string, icon?: string): Promise<ProductCategory> {
+  async createCategory(clubId: string, name: string): Promise<ProductCategory> {
     const { data, error } = await dbAdmin
       .from('product_categories')
-      .insert({ club_id: clubId, name, ...(icon ? { icon } : {}) })
+      .insert({ club_id: clubId, name })
       .select()
       .single()
     if (error) throw error

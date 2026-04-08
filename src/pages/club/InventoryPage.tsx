@@ -363,7 +363,7 @@ export default function InventoryPage() {
                     if (e.key === 'Enter') {
                       e.preventDefault()
                       if (!newCatName.trim()) return
-                      productsService.createCategory(clubId, newCatName.trim(), newCatIcon || undefined).then((cat) => {
+                      productsService.createCategory(clubId, newCatName.trim()).then((cat) => {
                         qc.invalidateQueries({ queryKey: ['product_categories', clubId] })
                         setSelectedCategoryId(cat.id)
                         setAddingCat(false)
@@ -377,7 +377,7 @@ export default function InventoryPage() {
                   type="button"
                   onClick={() => {
                     if (!newCatName.trim()) return
-                    productsService.createCategory(clubId, newCatName.trim(), newCatIcon || undefined).then((cat) => {
+                    productsService.createCategory(clubId, newCatName.trim()).then((cat) => {
                       qc.invalidateQueries({ queryKey: ['product_categories', clubId] })
                       setSelectedCategoryId(cat.id)
                       setAddingCat(false)
