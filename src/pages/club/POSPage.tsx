@@ -24,7 +24,7 @@ export default function POSPage() {
   const [customerPhone, setCustomerPhone] = useState('')
   const [foundCustomer, setFoundCustomer] = useState<Customer | null>(null)
   const [searching, setSearching] = useState(false)
-  const searchTimer = useRef<ReturnType<typeof setTimeout>>()
+  const searchTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
 
   // Debounced phone search — fires 400ms after user stops typing
   useEffect(() => {
