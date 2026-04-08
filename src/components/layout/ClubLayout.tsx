@@ -17,11 +17,11 @@ const dbAdmin = (supabaseAdmin ?? supabase) as any
 const NAV = [
   { label: 'Boshqaruv paneli', path: '/dashboard',  icon: <LayoutDashboard size={17} /> },
   { label: 'Mijozlar',         path: '/customers',   icon: <Users size={17} /> },
-  { label: 'Xizmatlar va Tariflar', path: '/plans',  icon: <BookOpen size={17} />, directorOnly: true },
+  { label: 'Xizmatlar va Tariflar', path: '/plans',  icon: <BookOpen size={17} /> },
   { label: 'Savdo (Bar)',      path: '/pos',         icon: <ShoppingCart size={17} /> },
-  { label: 'Ombor (Mahsulotlar)', path: '/inventory',icon: <Package size={17} />, directorOnly: true },
-  { label: 'Moliya',           path: '/finance',     icon: <BarChart2 size={17} />, directorOnly: true },
-  { label: 'Sozlamalar',       path: '/settings',    icon: <Settings size={17} />, directorOnly: true },
+  { label: 'Ombor (Mahsulotlar)', path: '/inventory',icon: <Package size={17} /> },
+  { label: 'Moliya',           path: '/finance',     icon: <BarChart2 size={17} /> },
+  { label: 'Sozlamalar',       path: '/settings',    icon: <Settings size={17} /> },
 ]
 
 const PAGE_META: Record<string, { title: string; subtitle: string; action?: React.ReactNode }> = {
