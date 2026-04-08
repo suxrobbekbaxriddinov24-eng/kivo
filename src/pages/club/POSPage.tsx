@@ -29,7 +29,7 @@ export default function POSPage() {
   // Debounced phone search — fires 400ms after user stops typing
   useEffect(() => {
     const digits = customerPhone.replace(/\D/g, '')
-    if (digits.length < 5) { setFoundCustomer(null); return }
+    if (digits.length < 2) { setFoundCustomer(null); return }
     setSearching(true)
     clearTimeout(searchTimer.current)
     searchTimer.current = setTimeout(async () => {
@@ -247,7 +247,7 @@ export default function POSPage() {
               </div>
             </div>
           )}
-          {customerPhone.replace(/\D/g, '').length >= 5 && !foundCustomer && !searching && (
+          {customerPhone.replace(/\D/g, '').length >= 2 && !foundCustomer && !searching && (
             <p className="text-xs text-gray-500 mt-1">Mijoz topilmadi</p>
           )}
         </div>
