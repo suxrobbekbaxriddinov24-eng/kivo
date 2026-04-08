@@ -126,4 +126,26 @@ export const customersService = {
     if (error) throw error
     return data ?? []
   },
+
+  /** Returns all open (not yet checked-out) visits for today across the whole club */
+  async listOpenVisitsToday(clubId: string): Promise<{ id: string; customer_id: string }[]> {
+    const startOfDay = new Date()
+    startOfDay.setHours(0, 0, 0, 0)
+    const { data } = await dbAdmin
+      .from('visits')
+      .select('id, customer_id')
+      .eq('club_id', clubId)
+      .gte('checked_in_at', startOfDay.toISOString())
+      .is('checked_out_at', null)
+    return data ?? []
+  },
+
+  /** Set checked_out_at on an open visit */
+  async checkOut(visitId: string): Promise<void> {
+    const { error } = await dbAdmin
+      .from('visits')
+      .update({ checked_out_at: new Date().toISOString() })
+      .eq('id', visitId)
+    if (error) throw error
+  },
 }

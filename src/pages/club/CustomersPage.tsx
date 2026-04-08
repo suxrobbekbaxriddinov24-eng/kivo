@@ -22,7 +22,7 @@ import { z } from 'zod'
 import type { Customer } from '@/types/database'
 import { formatDate, daysUntil, formatCurrency, formatPhone } from '@/lib/utils'
 import { GENDER_OPTIONS, PAYMENT_METHODS, PLAN_DURATIONS, DEFAULT_DISCOUNTS } from '@/lib/constants'
-import { Plus, UserCheck, Camera, Upload, Check, Pencil } from 'lucide-react'
+import { Plus, UserCheck, LogOut, Camera, Upload, Check, Pencil } from 'lucide-react'
 import CameraModal from '@/components/ui/CameraModal'
 
 // ---------- schema ----------
@@ -294,7 +294,29 @@ export default function CustomersPage() {
       if (sub.duration_type === 'visit_based' && sub.visits_total !== null && sub.visits_used >= sub.visits_total) throw new Error('Tashrif limiti tugagan')
       return customersService.checkIn(customerId, clubId, profile!.id, sub.id)
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['customers', clubId] }); toast.success('Kirish qayd etildi') },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['customers', clubId] })
+      qc.invalidateQueries({ queryKey: ['open_visits', clubId] })
+      toast.success('Kirish qayd etildi')
+    },
+    onError: (e: Error) => toast.error(e.message),
+  })
+
+  // Map of customerId → open visit id for today (customers currently inside)
+  const { data: openVisitsRaw = [] } = useQuery({
+    queryKey: ['open_visits', clubId],
+    queryFn: () => customersService.listOpenVisitsToday(clubId),
+    enabled: !!clubId,
+    refetchInterval: 30_000,
+  })
+  const openVisitMap = Object.fromEntries(openVisitsRaw.map((v) => [v.customer_id, v.id]))
+
+  const checkOutMutation = useMutation({
+    mutationFn: (visitId: string) => customersService.checkOut(visitId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['open_visits', clubId] })
+      toast.success('Chiqish qayd etildi')
+    },
     onError: (e: Error) => toast.error(e.message),
   })
 
@@ -393,10 +415,18 @@ export default function CustomersPage() {
         emptyMessage="Hech qanday mijoz topilmadi"
         actions={(c) => (
           <div className="flex items-center gap-2 justify-end">
-            <Button size="sm" variant="ghost" icon={<UserCheck size={14} />}
-              onClick={() => checkInMutation.mutate(c.id)}
-              loading={checkInMutation.isPending && checkInMutation.variables === c.id}
-              title="Kirdi deb belgilash" />
+            {openVisitMap[c.id] ? (
+              <Button size="sm" variant="ghost" icon={<LogOut size={14} />}
+                onClick={(e) => { e.stopPropagation(); checkOutMutation.mutate(openVisitMap[c.id]) }}
+                loading={checkOutMutation.isPending && checkOutMutation.variables === openVisitMap[c.id]}
+                title="Chiqdi deb belgilash"
+                className="text-orange-400 hover:text-orange-300" />
+            ) : (
+              <Button size="sm" variant="ghost" icon={<UserCheck size={14} />}
+                onClick={(e) => { e.stopPropagation(); checkInMutation.mutate(c.id) }}
+                loading={checkInMutation.isPending && checkInMutation.variables === c.id}
+                title="Kirdi deb belgilash" />
+            )}
             <Button size="sm" variant="ghost" icon={<Pencil size={14} />}
               onClick={(e) => { e.stopPropagation(); openEdit(c) }}
               title="Tahrirlash" />

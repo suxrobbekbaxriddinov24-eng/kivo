@@ -5,7 +5,6 @@ import { customersService } from '@/services/customers.service'
 import { subscriptionsService } from '@/services/subscriptions.service'
 import { formatDate, formatDateTime, formatPhone, formatCurrency, daysUntil } from '@/lib/utils'
 import StatusBadge from '@/components/ui/StatusBadge'
-import Button from '@/components/ui/Button'
 import { ArrowLeft, Phone, Calendar, User } from 'lucide-react'
 
 export default function CustomerDetailPage() {
@@ -141,16 +140,29 @@ export default function CustomerDetailPage() {
           <p className="text-gray-500 text-sm">Tashriflar yo'q</p>
         ) : (
           <div className="space-y-1">
-            {(visits as { id: string; checked_in_at: string }[]).slice(0, 20).map((v) => (
-              <div key={v.id} className="flex items-center justify-between px-3 py-2 rounded-lg text-sm hover:bg-gray-800/50">
-                <span className="text-gray-300">{formatDateTime(v.checked_in_at)}</span>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="text-xs text-[#00ff88]"
-                >Kirdi</Button>
-              </div>
-            ))}
+            {(visits as { id: string; checked_in_at: string; checked_out_at?: string | null }[]).slice(0, 20).map((v) => {
+              const duration = v.checked_out_at
+                ? Math.round((new Date(v.checked_out_at).getTime() - new Date(v.checked_in_at).getTime()) / 60000)
+                : null
+              return (
+                <div key={v.id} className="flex items-center justify-between px-3 py-2 rounded-lg text-sm hover:bg-gray-800/50">
+                  <div>
+                    <span className="text-gray-300">{formatDateTime(v.checked_in_at)}</span>
+                    {v.checked_out_at && (
+                      <span className="text-gray-500 text-xs ml-2">→ {formatDateTime(v.checked_out_at)}</span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {duration !== null && (
+                      <span className="text-xs text-gray-500">{duration} daqiqa</span>
+                    )}
+                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${v.checked_out_at ? 'text-gray-400 bg-gray-800' : 'text-[#00ff88] bg-[#00ff88]/10'}`}>
+                      {v.checked_out_at ? 'Chiqdi' : 'Ichkarida'}
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
           </div>
         )}
       </div>

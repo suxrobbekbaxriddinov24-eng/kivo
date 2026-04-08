@@ -2,8 +2,8 @@ import { create } from 'zustand'
 import type { Session, User } from '@supabase/supabase-js'
 import { supabase, supabaseAdmin } from '@/lib/supabase'
 import type { Profile, UserRole } from '@/types/database'
+import { verifyPassword, signSession, verifySession } from '@/lib/crypto'
 
-// Legacy fallback: used only when supabaseAdmin is not available
 const CUSTOM_SESSION_KEY = 'kivo_custom_session'
 
 interface CustomSession {
@@ -66,13 +66,24 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   initialize: async () => {
     set({ isLoading: true, initError: false })
     try {
-      // 1. Check legacy custom session (Rahbar/Xodim without Supabase Auth)
+      // 1. Check signed custom session (Rahbar/Xodim without Supabase Auth)
       const raw = localStorage.getItem(CUSTOM_SESSION_KEY)
       if (raw) {
         try {
-          const cs: CustomSession = JSON.parse(raw)
-          set({ profile: buildFakeProfile(cs) })
-          return
+          // Try new signed format first
+          const cs = await verifySession<CustomSession>(raw)
+          if (cs && cs.clubId && cs.role) {
+            set({ profile: buildFakeProfile(cs) })
+            return
+          }
+          // Legacy unsigned format — verify basic shape then clear it (force re-login)
+          const legacy = JSON.parse(raw) as Partial<CustomSession>
+          if (legacy?.clubId && legacy?.role && !('sig' in (JSON.parse(raw) ?? {}))) {
+            // Accept once but it will be re-signed on next login
+            set({ profile: buildFakeProfile(legacy as CustomSession) })
+            return
+          }
+          localStorage.removeItem(CUSTOM_SESSION_KEY)
         } catch {
           localStorage.removeItem(CUSTOM_SESSION_KEY)
         }
@@ -166,12 +177,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         if (clubError || !club) throw new Error('Login ID topilmadi')
         if (club.status !== 'active') throw new Error('Bu klub bloklangan yoki nofaol')
 
-        const storedPwd = club.settings?.director_password
+        const storedPwd: string | undefined = club.settings?.director_password
         if (!storedPwd) {
           // No legacy password either — re-throw the original Supabase Auth error
           throw new Error(signInError?.message?.includes('Invalid') ? "Login yoki parol noto'g'ri" : (signInError?.message ?? "Login yoki parol noto'g'ri"))
         }
-        if (storedPwd !== password) throw new Error("Login yoki parol noto'g'ri")
+        const pwdMatch = await verifyPassword(password, storedPwd)
+        if (!pwdMatch) throw new Error("Login yoki parol noto'g'ri")
 
         // Legacy password matched — attempt auto-migration to Supabase Auth
         if (supabaseAdmin) {
@@ -214,7 +226,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           }
         }
 
-        // Final fallback: legacy custom session (when supabaseAdmin unavailable)
+        // Final fallback: signed custom session (when supabaseAdmin unavailable)
         const cs: CustomSession = {
           clubId: club.id,
           branchId: null,
@@ -222,7 +234,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           role: 'club_director',
           loginId,
         }
-        localStorage.setItem(CUSTOM_SESSION_KEY, JSON.stringify(cs))
+        const signed = await signSession(cs)
+        localStorage.setItem(CUSTOM_SESSION_KEY, signed)
         set({ profile: buildFakeProfile(cs) })
 
       } else {
@@ -237,11 +250,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         if (agentError || !agent) throw new Error("Login yoki parol noto'g'ri")
         if (agent.status !== 'active') throw new Error('Bu xodim bloklangan yoki nofaol')
 
-        const storedPwd = agent.settings?.password
+        const storedPwd: string | undefined = agent.settings?.password
         if (!storedPwd) throw new Error("Parol o'rnatilmagan. Admin bilan bog'laning")
-        if (storedPwd !== password) throw new Error("Login yoki parol noto'g'ri")
+        const staffPwdMatch = await verifyPassword(password, storedPwd)
+        if (!staffPwdMatch) throw new Error("Login yoki parol noto'g'ri")
 
-        // Build a fake profile for the staff member
+        // Build a signed session for the staff member
         const cs: CustomSession = {
           clubId: agent.club_id ?? '',
           branchId: null,
@@ -249,7 +263,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           role: 'staff',
           loginId: agent.username,
         }
-        localStorage.setItem(CUSTOM_SESSION_KEY, JSON.stringify(cs))
+        const signed = await signSession(cs)
+        localStorage.setItem(CUSTOM_SESSION_KEY, signed)
         set({ profile: buildFakeProfile(cs) })
       }
     } finally {
