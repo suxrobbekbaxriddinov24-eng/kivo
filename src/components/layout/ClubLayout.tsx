@@ -243,14 +243,13 @@ function NotificationBell({ clubId }: { clubId: string }) {
 export default function ClubLayout() {
   const { profile } = useAuthStore()
   const location = useLocation()
-  const isDirector = profile?.role === 'club_director'
-  const navItems = NAV.filter((n) => !n.directorOnly || isDirector)
+  const navItems = NAV
 
   const base = location.pathname
   const meta = PAGE_META[base] ?? { title: 'Kivo', subtitle: '' }
 
   const clubName = profile?.full_name ?? 'Kivo Club'
-  const roleLabel = isDirector ? 'Rahbar' : 'Xodim'
+  const roleLabel = profile?.role === 'club_director' ? 'Rahbar' : 'Xodim'
   const clubId = profile?.club_id ?? ''
 
   return (
