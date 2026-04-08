@@ -62,7 +62,7 @@ export const salesService = {
 
   async list(clubId: string, period: FinancePeriod = 'month', limit = 200): Promise<Sale[]> {
     const from = periodStart(period)
-    const { data, error } = await db
+    const { data, error } = await dbAdmin
       .from('sales')
       .select('*, customer:customers(first_name,last_name), seller:profiles(full_name)')
       .eq('club_id', clubId)
