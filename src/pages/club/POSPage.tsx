@@ -1,13 +1,14 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@/stores/authStore'
 import { productsService } from '@/services/products.service'
+import { customersService } from '@/services/customers.service'
 import { salesService } from '@/services/sales.service'
 import type { BarSaleItem } from '@/services/sales.service'
 import { toast } from '@/stores/uiStore'
 import { formatCurrency } from '@/lib/utils'
-import type { Product, PaymentMethod } from '@/types/database'
-import { Plus, Minus, Trash2, ShoppingCart, CheckCircle } from 'lucide-react'
+import type { Product, Customer, PaymentMethod } from '@/types/database'
+import { Plus, Minus, Trash2, ShoppingCart, CheckCircle, X, User } from 'lucide-react'
 
 interface CartItem { product: Product; qty: number }
 
@@ -21,6 +22,25 @@ export default function POSPage() {
   const [payMethod, setPayMethod] = useState<PaymentMethod>('cash')
   const [discountPct, setDiscountPct] = useState(0)
   const [customerPhone, setCustomerPhone] = useState('')
+  const [foundCustomer, setFoundCustomer] = useState<Customer | null>(null)
+  const [searching, setSearching] = useState(false)
+  const searchTimer = useRef<ReturnType<typeof setTimeout>>()
+
+  // Debounced phone search — fires 400ms after user stops typing
+  useEffect(() => {
+    const digits = customerPhone.replace(/\D/g, '')
+    if (digits.length < 5) { setFoundCustomer(null); return }
+    setSearching(true)
+    clearTimeout(searchTimer.current)
+    searchTimer.current = setTimeout(async () => {
+      try {
+        const results = await customersService.list(clubId, { search: digits })
+        setFoundCustomer(results.length > 0 ? results[0] : null)
+      } catch { setFoundCustomer(null) }
+      setSearching(false)
+    }, 400)
+    return () => clearTimeout(searchTimer.current)
+  }, [customerPhone, clubId])
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ['products', clubId],
@@ -183,32 +203,53 @@ export default function POSPage() {
           )}
         </div>
 
-        {/* Customer phone */}
+        {/* Customer phone search */}
         <div className="px-4 py-3 border-b border-gray-800">
           <p className="text-xs text-gray-500 uppercase tracking-wider mb-1.5">Mijoz (ixtiyoriy)</p>
-          <div className="flex items-center gap-2">
-            <div className="flex-1 flex items-center gap-2 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2">
-              <span className="text-red-400 text-xs">📞</span>
-              <input
-                type="text"
-                value={customerPhone}
-                onChange={(e) => {
-                  const digits = e.target.value.replace(/\D/g, '').slice(0, 9)
-                  let formatted = digits
-                  if (digits.length > 2) formatted = digits.slice(0,2) + '-' + digits.slice(2)
-                  if (digits.length > 5) formatted = digits.slice(0,2) + '-' + digits.slice(2,5) + '-' + digits.slice(5)
-                  if (digits.length > 7) formatted = digits.slice(0,2) + '-' + digits.slice(2,5) + '-' + digits.slice(5,7) + '-' + digits.slice(7)
-                  setCustomerPhone(formatted)
-                }}
-                placeholder="90-123-12-22"
-                maxLength={11}
-                className="flex-1 bg-transparent text-white text-sm placeholder:text-gray-600 focus:outline-none"
-              />
+          {foundCustomer ? (
+            <div className="flex items-center gap-2 bg-[#00ff88]/10 border border-[#00ff88]/30 rounded-lg px-3 py-2">
+              {foundCustomer.photo_url ? (
+                <img src={foundCustomer.photo_url} className="w-7 h-7 rounded-full object-cover" />
+              ) : (
+                <div className="w-7 h-7 rounded-full bg-[#00ff88]/20 flex items-center justify-center">
+                  <User size={13} className="text-[#00ff88]" />
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="text-white text-sm font-medium truncate">{foundCustomer.first_name} {foundCustomer.last_name}</p>
+                <p className="text-[#00ff88] text-xs">{customerPhone}</p>
+              </div>
+              <button onClick={() => { setCustomerPhone(''); setFoundCustomer(null) }}
+                className="text-gray-500 hover:text-white transition-colors">
+                <X size={14} />
+              </button>
             </div>
-            <button className="w-9 h-9 flex items-center justify-center bg-gray-800 border border-gray-700 rounded-lg text-gray-400 hover:text-white hover:border-gray-500 transition-colors">
-              <CheckCircle size={15} />
-            </button>
-          </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <div className={`flex-1 flex items-center gap-2 bg-gray-800 border rounded-lg px-3 py-2 transition-colors ${searching ? 'border-[#00ff88]/50' : 'border-gray-700'}`}>
+                <span className="text-red-400 text-xs">📞</span>
+                <input
+                  type="text"
+                  value={customerPhone}
+                  onChange={(e) => {
+                    const digits = e.target.value.replace(/\D/g, '').slice(0, 9)
+                    let formatted = digits
+                    if (digits.length > 2) formatted = digits.slice(0,2) + '-' + digits.slice(2)
+                    if (digits.length > 5) formatted = digits.slice(0,2) + '-' + digits.slice(2,5) + '-' + digits.slice(5)
+                    if (digits.length > 7) formatted = digits.slice(0,2) + '-' + digits.slice(2,5) + '-' + digits.slice(5,7) + '-' + digits.slice(7)
+                    setCustomerPhone(formatted)
+                  }}
+                  placeholder="90-123-12-22"
+                  maxLength={12}
+                  className="flex-1 bg-transparent text-white text-sm placeholder:text-gray-600 focus:outline-none"
+                />
+                {searching && <div className="w-4 h-4 border-2 border-[#00ff88] border-t-transparent rounded-full animate-spin" />}
+              </div>
+            </div>
+          )}
+          {customerPhone.replace(/\D/g, '').length >= 5 && !foundCustomer && !searching && (
+            <p className="text-xs text-gray-500 mt-1">Mijoz topilmadi</p>
+          )}
         </div>
 
         {/* Cart items */}
