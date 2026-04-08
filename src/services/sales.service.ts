@@ -108,6 +108,7 @@ export const salesService = {
       .select('id, checked_in_at, customer_id')
       .eq('club_id', clubId)
       .gte('checked_in_at', today)
+      .is('checked_out_at', null)
       .order('checked_in_at', { ascending: false })
     if (error) throw error
     return data ?? []
